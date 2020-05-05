@@ -101,4 +101,158 @@ The span of a gate is the difference between the minimum and maximum control/tar
 Reading left to right, controls first, then target
 
 Prefixes and suffixes are used, as in all other gates, to position the gate vertically in the circuit
+
 Any single qubit gate can be followed by a control suffix to make it a controlled gate
+
+Display
+===
+
+The default display is the resulting gate matrix or quantum state transposed column vector
+
+If the gate sequence was supplied with an initial value (see below), that value is displayed before the gate sequence is executed
+
+The ket (-k) flag causes the quantum state display to be in basis vector form
+
+The trace (-t) flag causes a display of output at each step in the gate sequence
+
+    * If there was an initial value, the trace is of each quantum state
+    * If no initial value, the trace is the equivalent gate matrix to that point in the circuit
+
+Measurement
+===
+
+The :M pseudo-gate signifies measurement
+
+It is placed and replicated as many times as needed in a circuit.  To measure all 5 qubits at the end of a 5-qubit gate sequence, use :M5
+
+The measurement display is a probability associated with each of the basis vectors at the point in the circuit where the :M pseudo-gate appears. Measurement output is sequentially numbered to track the different M-pseudo-gates that may be in a gate sequence
+
+Measurement is purely a mathematical display and does not cause state collapse
+
+Any subset of the qubit lines can be measured.  Use the comma gate name delimiters if needed.
+
+Initial Values
+===
+
+A gate sequence execution does not automatically start with a ￼ value. This allows the computation and display of an equivalent gate matrix, a sequence of gate matrix products
+
+To specify an initial value for a gate sequence, including ￼, use a linear combination of basis vectors in standard quantum computing ket notation
+
+    * |0> - single qubit zero ket
+    * 0.707|0>+0.707|1> - balanced superposition qubit
+    * Decimal values should begin with a zero, not a decimal point
+    * An i is the imaginary value suffix, and must be preceded by a number, even if the number is 1.  Only + and - operators are used.  Multiplication is implicit when a complex number is adjacent to a basis ket. There is no division, but see factoring below.
+    * The initial value is ended by the first colon of the gate sequence
+    
+Initial Value Tensor Products
+===
+
+Larger initial values can be composed by surrounding a ket expression with parentheses
+
+    * (|0>)(|0>) is the same as |00>
+    * (0.707|0>+0.707|1> )(0.707|0>-0.707|1>) is the tensor product of |+> and |->￼, symbols which are currently not recognized by QQCS
+    
+If the tensor product is all that is needed, terminate the statement with a return. No gate sequence is necessary.
+
+Factoring
+===
+
+A Quantum Fourier Transform circuit \[5\] can be difficult to recognize without factoring.
+
+The / operator followed by a (possibly complex) number at the end of a gate sequence, will factor out the number before the final display
+
+### Quantum Fourier Transform - No Factor
+```
+:Hii:S10i:T20:iHi:iS10:iiH:Sw02
+0.354  0.354       0.354   0.354      ...
+0.354  0.25+0.25i  0.354i -0.25+0.25i ...
+0.354  0.354i     -0.354  -0.354i     ...
+0.354 -0.25+0.25i -0.354i  0.25+0.25i ...
+0.354 -0.354       0.354  -0.354      ...
+0.354 -0.25-0.25i  0.354i  0.25-0.25i ...
+0.354 -0.354i     -0.354   0.354i     ...
+0.354  0.25-0.25i -0.354i -0.25-0.25i ...
+```
+
+### Quantum Fourier Transform - Factoring Sqrt(8)
+```
+:Hii:S10i:T20:iHi:iS10:iiH:Sw02/0.35355
+1  1             1   1            ...
+1  0.707+0.707i  1i -0.707+0.707i ...
+1  1i           -1  -1i           ...
+1 -0.707+0.707i -1i  0.707+0.707i ...
+1 -1             1  -1            ...
+1 -0.707-0.707i  1i  0.707-0.707i ...
+1 -1i           -1   1i           ...
+1  0.707-0.707i -1i -0.707-0.707i ...
+```
+
+Custom Gates
+===
+
+A gate sequence can be named and saved for future use.  Simply precede the gate sequence with a name
+
+A name should start with a letter, comprise letters and digits, BUT should not end with a digit.  Do not start or end the name with anything that might be mistaken for a gate sequence prefix or suffix, such as "i".
+
+Once defined, a custom gate is used just like a normal gate.  It can be positioned in a circuit with i prefixes and suffixes, but control and replicator suffixes cannot be applied to it.
+
+For example, ss:Sw03:Sw01ii:iSw01i assigns the 4-qubit custom swap circuit \[1\] to the name ss.  It can then be used in another circuit as :ss, or all 16 4-qubit basis kets can be used as initial values to determine the effect of the circuit on each.
+
+Conclusion
+===
+
+QQCS is a simple linear notation for the simulation of quantum circuits
+
+It is an educational tool that can be easily used by students new to Quantum Computing
+
+It provides automatic mathematical analysis of circuits by incorporating the matrix mathematics necessary to provide insight to circuit operation, and by displaying the details at each execution step, something not available from quantum computer execution
+
+It can be executed in interactive or batch mode
+
+QQCS is available through the NodeJS Package Manager, npm, and is executed using NodeJS
+
+QQCS Linear Notation Syntax
+===
+
+### Meta-symbols
+    - ::=   is defined as
+    - |   alternative
+    - \[ ... \]   zero or more
+    - e   empty
+    - 'x'   identifies x as a grammar symbol
+```
+pgm ::=  stmt stmt-list eof
+stmt ::= e | circuit | ident gate-sequence
+stmt-list ::= e | eol stmt [ stmt-list ]
+circuit ::= e | initial-value gate-sequence
+gate-sequence ::= e | g-seq-tail g-factor
+initial-value ::= e | q-state | q-state-list
+q-state ::=  unop v-comp p-state-tail
+q-state-list ::= e | ( q-state ) [ q-state-list ]
+g-seq-tail ::= e | : gate [ g-seq-tail ]
+g-factor ::= e | / complex
+gate ::=  sub-gate gates
+unop ::= e | -
+v-comp ::=  coeff ket
+p-state-tail ::= e | addop v-comp [ p-state-tail ]
+addop ::=  + | -
+sub-gate ::=  ident
+gates ::= e | , sub-gate [ gates ]
+coeff ::= e | complex | integer
+ket ::=  '|' integer >
+```
+
+References
+===
+```
+[1] C. C. Moran (2019) Mastering Quantum Computing with IBM QX,  Birmingham, UK, Packt Publishing.
+[2] G. Nannicini (2018). An Introduction to Quantum Computing, Without the Physics. IBM T.J. Watson, Yorktown Heights, NY. retrieve https://arxiv.org/pdf/1708.03684v3.pdf.
+[3] M. A. Nielsen and I. L. Chuang (2010) Quantum Computation and Quantum Information. 10th Anniversary Ed, New York, Cambridge University Press.
+[4] E. Rieffel and W. Polak (2011) Quantum Computing, A Gentle Introduction. MIT Press, Cambridge, Massachusetts; London, England.
+[5] R. S. Sutor (2019) Dancing With Qubits. Birmingham, UK, Packt Publishing.
+[6] A. Cross, L. Bishop, J. Smolin, J. Gambetta (2017). Open Quantum Assembly Language. retrieve https://arxiv.org/pdf/1707.03429.pdf.
+[7] IBM, Quantum Experience web site (2019) retrieve http://quantumexperience.ng.bluemix.net/.
+[8] The QISKit SDK for Quantum Software Development (2019). retrieve https://github.com/QISKit.
+[9]QuTIP (2019) - Quantum Toolbox In Python, a set of software tools for quantum math, visualization, and simulation, retrieve http://qutip.org/.
+[10] QPIC (2018) Creating quantum circuit diagrams in TikZ. retrieve https://github.com/qpic/qpic.
+```
