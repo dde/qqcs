@@ -26,7 +26,9 @@ The system allows a student to quickly construct a circuit using a linear notati
 
 Introduction
 ===
-The following gate sequence [6] may or may not implement a controlled Hadamard gate.  How is one to tell?
+The following gate sequence cite6 may or may not implement a controlled Hadamard gate.  How is one to tell?
+
+![Controlled Hadamard Sequence](img/Screen Shot 2020-05-03 at 3.41.56 PM.png)
 
 Writing a program in QASM [6] will give you counts at the end, but it will be difficult to say for sure that those counts represent controlled-H gate
 
