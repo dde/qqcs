@@ -28,11 +28,10 @@ Introduction
 ===
 The following gate sequence cite6 may or may not implement a controlled Hadamard gate.  How is one to tell?
 
-![Image of Controlled Hadamard Sequence]
-(img/Screen%20Shot%202020-05-03%20at%203.41.56%20PM.png)
+<img src="img/Screen Shot 2020-05-03 at 3.41.56 PM.png" />
 
-Writing a program in QASM [6] will give you counts at the end, but it will be difficult to say for sure that those counts represent controlled-H gate
+Writing a program in QASM cite6 will give you counts at the end, but it will be difficult to say for sure that those counts represent controlled-H gate
 
-You can write a QuTIP [9] program in Python, or use Python interactively to invoke QuTIP functions after studying QuTIP and the Num.py library
+You can write a QuTIP cite9 program in Python, or use Python interactively to invoke QuTIP functions after studying QuTIP and the Num.py library
 
 Or you can interactively enter a single QQCS statement
