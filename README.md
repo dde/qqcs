@@ -93,8 +93,7 @@ Non-adjacent gates are handled by dividing the name into comma-separated pieces.
 Controlled Gate Names
 ===
 
-<img src="img/Screen Shot 2020-05-03 at 3.41.56 PM.png" />
-
+<img src="img/Screen Shot 2020-05-03 at 8.30.54 PM.png" />
 
 Qubit line numbers on a controlled gate are relative to the span of the gate
 
