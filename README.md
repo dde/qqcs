@@ -217,7 +217,7 @@ QQCS Linear Notation Syntax
 ### Meta-symbols
     - ::=   is defined as
     - |   alternative
-    - \[ ... \]   zero or more
+    - [ ... ]   zero or more
     - e   empty
     - 'x'   identifies x as a grammar symbol
 ```
@@ -230,7 +230,7 @@ initial-value ::= e | q-state | q-state-list
 q-state ::=  unop v-comp p-state-tail
 q-state-list ::= e | ( q-state ) [ q-state-list ]
 g-seq-tail ::= e | : gate [ g-seq-tail ]
-g-factor ::= e | / complex
+g-factor ::= e | / unop complex
 gate ::=  sub-gate gates
 unop ::= e | -
 v-comp ::=  coeff ket
