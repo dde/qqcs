@@ -46,7 +46,7 @@ Here is the interactive QQCS statement and its output to definitively answer the
 [0.7+0.7i 0            0              0
  0            0.7+0.7i 0              0
  0            0            0.5+0.5i   0.5+0.5i
- 0            0            0.5+0.5i -0.5-0.5i]
+ 0            0            0.5+0.5i  -0.5-0.5i]
 ```
 
 Although first two diagonal elements should be 1, it looks like a factor of cos pi/4 + i sin pi/4￼ would make that so, meaning that the circuit could very well be equivalent to a global phase with a controlled Hadamard gate
