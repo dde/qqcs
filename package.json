@@ -1,0 +1,25 @@
+{
+  "name": "qqcs",
+  "version": "1.0.0",
+  "description": "Quick Quantum Circuit Simulation",
+  "main": "qdesk.js",
+  "scripts": {
+    "test": "qqcs_tester.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dde/qqcs.git"
+  },
+  "keywords": [
+    "quantum computing",
+    "quantum circuit simulation",
+    "quantum calculator",
+    "quantum programming"
+  ],
+  "author": "Daniel Evans",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/dde/qqcs/issues"
+  },
+  "homepage": "https://github.com/dde/qqcs#readme"
+}
