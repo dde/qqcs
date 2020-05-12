@@ -4,7 +4,7 @@
   "description": "Quick Quantum Circuit Simulation",
   "main": "qdesk.js",
   "scripts": {
-    "test": "qqcs_tester.js"
+    "test": "node test/qdesk_tester.js"
   },
   "repository": {
     "type": "git",
