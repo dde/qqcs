@@ -132,7 +132,7 @@
   cmdArgs(cfg, usage);
   if (cfg.help)
     usage();
-  if (cfg.interactive)
+  if (cfg.interactive || 0 === cfg.files.length)
   {
     tt = require('./qdesk_interactive.js');
     lex = new qd.QDeskLexer('interactive');
