@@ -61,14 +61,17 @@ function cmdArgs(config, usage) {
   }
   return true;
 }
-let ql = require('../qdesk_lexer.js'),
-    qq = require('../qdesk_compile.js'),
-    qi = require('../qdesk_interpret.js');
+let ql = require('./qdesk_lexer.js'),
+    qq = require('./qdesk_compile.js'),
+    qi = require('./qdesk_interpret.js');
 let tkn, ix;
 let tfil, lex, compiler, interp, stmt;
 let cfg = {
   files:[],
-  flags:{}
+  kdisp:false,
+  trace:false,
+  sparse:false,
+  flags:{k:'kdisp', t:'trace', s:'sparse'}
 };
 let tt, tc, tst, tstout, assert, fai, util;
   cmdArgs(cfg, usage);

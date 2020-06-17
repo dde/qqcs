@@ -147,7 +147,7 @@
     {
       console.log('--- file:%s---', cfg.files[ix])
       lex = new qd.QDeskLexer(cfg.files[ix]);
-      interp = new qi.QDeskInterpret();
+      interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp});
       compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
       // if (cfg.skel)
       // {

@@ -1,6 +1,7 @@
 /**
  * Created by danevans on 4/4/20.
  */
+let qq = require('./quantum.js');
 class LogicErr extends Error
 {
   constructor(msg) {
@@ -11,7 +12,6 @@ class QDeskInterpret
 {
   constructor(cfg)
   {
-    let cc = require('./complex.js');
     if (undefined === QDeskInterpret.single)
     {
       QDeskInterpret.single = this;
@@ -21,9 +21,9 @@ class QDeskInterpret
       return QDeskInterpret.single;
     }
     this.util = require('util');
-    this.Quantum = require('./quantum.js').Quantum;
-    this.Complex = cc.Complex;
-    this.CMatrix = cc.CMatrix;
+    this.Quantum = qq.Quantum;
+    this.Complex = qq.Complex;
+    this.Matrix = qq.Matrix;
     this.Qubit = Qubit;
     this.Gate = Gate;
     this.NamedGate = NamedGate;
@@ -67,6 +67,7 @@ class QDeskInterpret
       'C': null,
       'Cr': null,
       'Cx': null,
+      'Im':null,
       'Sw': null,
       'Tf': null,
       'Rx': null,
@@ -106,7 +107,7 @@ class QDeskInterpret
     this.test_out.push(line);
   }
   analyze_opcode(opc) {
-    let ch, pw, ix, jx, kx, bas, pf, sf, ln, op, ct, c1, c2, t1;
+    let ch, pw, ix, jx, kx, bas, pf, sf, ln, op, c1, c2, t1;
     function tpower(pwr, mt)
     {
       let pw, ct, op = null;
@@ -152,7 +153,7 @@ class QDeskInterpret
             op = this.base_set[ch]
           continue;
         }
-        if (kx > 0 && (ch === 'f' || ch === 'r' || ch === 'x' || ch === 'y' || ch === 'z' || ch === 'w'))
+        if (kx > 0 && (ch === 'f' || ch === 'm' || ch === 'r' || ch === 'x' || ch === 'y' || ch === 'z' || ch === 'w'))
         {
           ch += opc.charAt(--kx);
         }
@@ -219,6 +220,10 @@ class QDeskInterpret
       c1 = parseInt(opc.charAt(kx + 1));
       t1 = parseInt(opc.charAt(kx + 2));
       op = this.Quantum.buildCNOT(Math.abs(c1 - t1) + 1, c1, t1);
+      break;
+    case 'Im':
+      c1 = parseInt(opc.charAt(kx + 1));
+      op = this.Quantum.buildMeanInversion(c1);
       break;
     case 'Sw':
       if (2 !== jx - kx)
@@ -352,13 +357,17 @@ class QDeskInterpret
         {
           if (1 === eq.columns())
             this.write(this.util.format('%s [%s]\n', lst, eq.qdisp()));
-          else
+          else if (33 > eq.columns())
             this.write(this.util.format('%s [%s]\n', lst, eq.disp()));
+          else
+            this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
         }
         else
         {
-          if (6 > eq.columns())
+          if (33 > eq.columns())
             this.write(this.util.format('%s=\n%s\n', lst, eq.edisp()));
+          else
+            this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
         }
       }
     }
@@ -366,17 +375,22 @@ class QDeskInterpret
     {
       if (1 === eq.columns())
       {
-        if (this.cfg.state)
-          this.write(this.util.format('[%s] %s %s\n', init, lst, eq.qdisp()));
+        if (33 > eq.columns())
+        {
+          if (this.cfg.state)
+            this.write(this.util.format('[%s] %s %s\n', init, lst, eq.qdisp()));
+          else
+            this.write(this.util.format('[%s] %s [%s]\n', init, lst, eq.transpose().disp()));
+        }
         else
-          this.write(this.util.format('[%s] %s [%s]\n', init, lst, eq.transpose().disp()));
+          this.write(this.util.format('large %dx%d quantum state display suppressed\n', eq.rows(), eq.columns()));
       }
       else
       {
         if (33 > eq.columns())
           this.write(this.util.format('[%s] %s [\n%s]\n', init, lst, eq.edisp()));
         else
-          this.write(this.util.format('large matrix display suppressed\n'));
+          this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
       }
     }
     // else
@@ -513,17 +527,18 @@ class Qubit extends Operand
       }
     }
     if (_mx > QDeskInterpret.single.Quantum.qubits)
-      throw Error('current support is limited to 10 qubits');
-    this._vector = new QDeskInterpret.single.CMatrix(Math.pow(2, _mx), 1);
+      throw Error('current support is limited to ' + QDeskInterpret.single.Quantum.qubits + ' qubits');
+    this._vector = new QDeskInterpret.single.Matrix(Math.pow(2, _mx), 1);
     for (_k of ka)
     {
-      this._vector.mat[_k.basis][0] = new QDeskInterpret.single.Complex(_k.coeff);
+      // this._vector.mat[_k.basis][0] = new QDeskInterpret.single.Complex(_k.coeff);
+      this._vector.sub(_k.basis, 0, new QDeskInterpret.single.Complex(_k.coeff));
     }
     _bts = new QDeskInterpret.single.Complex(0);
     for (_mn = 0; _mn < this.vector.rows(); ++_mn)
     {
-      if (undefined === this._vector.mat[_mn][0])
-        this._vector.mat[_mn][0] = _bts;
+      if (undefined === this._vector.sub(_mn, 0))
+        this._vector.sub(_mn, 0, _bts);
     }
   }
   get ident() {
@@ -665,7 +680,7 @@ class GateFactor extends Operand {
     let r, nm, op;
     r = new QDeskInterpret.single.Complex(1).quo(this._factor);
     nm = '/';
-    op = QDeskInterpret.single.CMatrix.scprod.bind(null, r);
+    op = QDeskInterpret.single.Matrix.scprod.bind(null, r);
     QDeskInterpret.single.inst_set[nm] = op;
     return nm;
   }
