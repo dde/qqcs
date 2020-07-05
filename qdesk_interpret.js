@@ -223,6 +223,8 @@ class QDeskInterpret
       break;
     case 'Im':
       c1 = parseInt(opc.charAt(kx + 1));
+      if (isNaN(c1))
+        c1 = 1;
       op = this.Quantum.buildMeanInversion(c1);
       break;
     case 'Sw':
