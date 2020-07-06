@@ -78,7 +78,8 @@ Basic Available Gates
 <tr><td>t </td><td>  (T adjoint) </td><td>Tf </td><td> general Toffoli gate (used with a 3-digit control suffix) </td></tr>
 <tr><td>X </td><td> Pauli X gate </td><td>Fr </td><td> general Fredkin gate (used with a 3-digit control suffix) </td></tr>
 <tr><td>Y </td><td> Pauli Y gate </td><td></td><td>named, reusable, custom gate sequences</td></tr>
-<tr><td>Z </td><td> Pauli Z gate (π phase gate)</td><td>M</td><td>measurement</td></tr>
+<tr><td>Z </td><td> Pauli Z gate (π phase gate)</td><td>Imn</td><td>n-qubit Mean Inversion</td></tr>
+<tr><td></td><td></td><td>Mn</td><td>n-qubit measurement</td></tr>
 </table>
    
 Gate Positioning and Replication
