@@ -90,6 +90,10 @@ let tt, tc, tst, tstout, assert, fai, util;
       try
       {
         lex.setSourceLine(tst.stmt);
+        if (undefined !== tst.flags)
+          interp.setFlags(tst.flags);
+        else
+          interp.clearFlags();
         stmt = compiler._stmt();
         assert.notStrictEqual(stmt, null);
         tstout = interp.exec(stmt);

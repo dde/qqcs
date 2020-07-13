@@ -76,6 +76,16 @@ class QDeskInterpret
     };
     this.inst_set = [];
   }
+  clearFlags() {
+    this.cfg.all = false;
+    this.cfg.state = false;
+  }
+  setFlags(cfg) {
+    if (undefined !== cfg.all)
+      this.cfg.all = Boolean(cfg.all);
+    if (undefined !== cfg.state)
+      this.cfg.state = Boolean(cfg.state);
+  }
   commentProcessor(cmt)
   {
     let mch = [];
@@ -395,8 +405,13 @@ class QDeskInterpret
           this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
       }
     }
-    // else
-    //  this.write(this.util.format('%s=\n%s\n', lst, eq.edisp()));
+    else
+    {
+      if (33 > eq.columns())
+        this.write(this.util.format('[%s] %s [\n%s]\n', init, lst, eq.edisp()));
+      else
+        this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
+    }
     return eq;
   }
   exec (stmt) {
