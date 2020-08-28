@@ -4,11 +4,17 @@
 function Complex(re, im) {
   if (typeof arguments[0] === 'string')
   {
-    this.magn = re.match(/([+-]?)([0-9.]+)([+-])([0-9.]+)i/); // both real and imag must be present with i suffix
+    this.magn = re.match(/(([+-]?)([0-9.]+))?(([+-])([0-9.]+)i)?/); // both real and imag must be present with i suffix
     if (this.magn != null)
     {
-      this.real = parseFloat(this.magn[1] + this.magn[2]);
-      this.imag = parseFloat(this.magn[3] + this.magn[4]);
+      if (this.magn[1] !== undefined)
+        this.real = parseFloat(this.magn[1]);
+      else
+        this.real = 0.0;
+      if (this.magn[4] !== undefined)
+        this.imag = parseFloat(this.magn[4]);
+      else
+        this.imag = 0.0;
     }
     else
     {
@@ -189,13 +195,16 @@ Complex.prototype.negate = function() {
   return new Complex(-this.real, -this.imag);
 };
 Complex.prototype.conjugateq = function() {
-  this.imag = -this.imag;
+  if (0.0 !== this.imag)
+    this.imag = -this.imag;
   this.magn = -1.0;
   return this;
 };
 Complex.prototype.negateq = function() {
-  this.real = -this.real;
-  this.imag = -this.imag;
+  if (0.0 !== this.real)
+    this.real = -this.real;
+  if (0.0 !== this.imag)
+    this.imag = -this.imag;
   this.magn = -1.0
   return this;
 };

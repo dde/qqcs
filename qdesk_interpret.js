@@ -667,7 +667,10 @@ class Ket extends Operand
     }
   }
   negate() {
-    this._coeff = this._coeff.conjugateq().negateq();
+    // negate only real part unless it is 0.0, then negate complex part
+    this._coeff.conjugateq();
+    if (0.0 !== this._coeff.Re())
+      this._coeff.negateq();
   }
   toString() {
     let str = '';
@@ -691,7 +694,10 @@ class GateFactor extends Operand {
     return this._factor;
   }
   negate() {
-    this._factor = this._factor.negate();
+    // negate only real part unless it is 0, then negate complex part
+    this._factor.conjugateq();
+    if (0.0 !== this._factor.Re())
+      this._factor.negateq();
   }
   build() {
     let r, nm, op;

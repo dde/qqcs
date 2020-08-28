@@ -518,7 +518,7 @@ class QDeskLexer
         }
         // throw new Error("lexerr: unrecognized token:'" + QDeskLexer.SLS + _ch + '\' at ' + String(this.linenumber) + ':' + String(this.position));
         _ch = this.next();
-        while (_ch !== QDeskLexer.NL)
+        while (_ch !== QDeskLexer.NL && _ch !== QDeskLexer.CR)
         {
           _ch = this.next();
         }
@@ -527,7 +527,7 @@ class QDeskLexer
       case QDeskLexer.HASH:
         this.mark();
         _ch = this.next();
-        while (_ch !== QDeskLexer.NL)
+        while (_ch !== QDeskLexer.NL && _ch !== QDeskLexer.CR)
         {
           _ch = this.next();
         }

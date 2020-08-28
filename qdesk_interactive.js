@@ -21,11 +21,15 @@ function SysinReader(callback, intro) {
     }
   }
   function prompt() {
-    let lin, pfx;
+    let lin, pfx, pad;
     lin = String(++ctl.lineno);
+    pad = ctl.wid - lin.length
     //process.stdout.cursorTo(0);
     //process.stdout.moveCursor(0, 1);
-    pfx = '[' + (' '.repeat(ctl.wid - lin.length)) + lin + '] ';
+    if (pad > 0)
+      pfx = '[' + (' '.repeat(pad)) + lin + '] ';
+    else
+      pfx = '[' + lin + '] ';
     process.stdout.write(pfx);
   }
   function escapeCheck(_src) {
