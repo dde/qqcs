@@ -199,6 +199,21 @@ Once defined, a custom gate is used just like a normal gate.  It can be position
 
 For example, ss:Sw03:Sw01ii:iSw01i assigns the 4-qubit custom swap circuit \[1\] to the name ss.  It can then be used in another circuit as :ss, or all 16 4-qubit basis kets can be used as initial values to determine the effect of the circuit on each.
 
+Comments
+===
+
+Comments are introduced by the hash character (#) and continue until the end of the line.
+
+In interactive mode, it is possible to embed switch controls by preceding the switch keyword with a $ in a comment.
+
+    kdisp - display quantum states in ket notation (default is transposed column vector)
+    trace - display the resulting quantum state (or equivalent matrix) at each step of the quantum circuit
+    none - turn off kdisp and trace
+
+Interactive help
+
+    The keyword gate[s] immediately following the hash character in an interactive comment will display a short help regarding the available gates.
+
 Conclusion
 ===
 
