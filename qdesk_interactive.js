@@ -141,7 +141,7 @@ function SysinReader(callback, intro) {
         }
         return;
       }
-      if ('\u007f' === ch)  // backspace
+      if ('\u007f' === ch || '\u0008' === ch)  // delete, backspace
       {
         if (ctl.pos > 0)
         {
@@ -262,7 +262,7 @@ function SysinReader(callback, intro) {
 // function test() {
 //   let intro = ['TTY Tester\n',
 //       '  left arrow - move cursor left; right arrow - move cursor right\n',
-//       '  delete - delete character to the left of the cursor and shift characters left\n',
+//       '  del, BS - (Mac delete, Win BS) delete the character to the left of the cursor and shift characters left\n',
 //       '  insert - automatic when cursor is not at end-of-line\n',
 //       '  up arrow - recall line history\n',
 //       '  ctrl-D, ctrl-C - end session\n'];
