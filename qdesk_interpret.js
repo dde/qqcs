@@ -31,7 +31,7 @@ class QDeskInterpret
     this.Ket = Ket;
     if (undefined === cfg)
     {
-      this.cfg = {all:false, state:false};
+      this.cfg = {trace:false, kdisp:false};
     }
     else
     {
@@ -39,10 +39,10 @@ class QDeskInterpret
         this.cfg = {};
       else
         this.cfg = cfg;
-      if (typeof cfg.state !== 'boolean')
-        this.cfg.state = false;
-      if (typeof cfg.all !== 'boolean')
-        this.cfg.all = false;
+      if (typeof cfg.kdisp !== 'boolean')
+        this.cfg.kdisp = false;
+      if (typeof cfg.trace !== 'boolean')
+        this.cfg.trace = false;
     }
     if (this.cfg.test)
     {
@@ -62,8 +62,8 @@ class QDeskInterpret
       'M': null,
       'S': this.Quantum.sGate,
       'T': this.Quantum.tGate,
-      's': this.Quantum.sGate,
-      't': this.Quantum.tGate,
+      's': this.Quantum.sGate.adjoint(),
+      't': this.Quantum.tGate.adjoint(),
       'C': null,
       'Cr': null,
       'Cx': null,
@@ -73,35 +73,42 @@ class QDeskInterpret
       'Rx': null,
       'Ry': null,
       'Rz': null,
+      // 'D': null,
     };
     this.inst_set = [];
   }
   clearFlags() {
-    this.cfg.all = false;
-    this.cfg.state = false;
+    this.cfg.trace = false;
+    this.cfg.kdisp = false;
   }
   setFlags(cfg) {
-    if (undefined !== cfg.all)
-      this.cfg.all = Boolean(cfg.all);
-    if (undefined !== cfg.state)
-      this.cfg.state = Boolean(cfg.state);
+    if (undefined !== cfg.trace)
+      this.cfg.trace = Boolean(cfg.trace);
+    if (undefined !== cfg.kdisp)
+      this.cfg.kdisp = Boolean(cfg.kdisp);
   }
   commentProcessor(cmt)
   {
     let mch = [];
-    if ('$' !== cmt.charAt(0))
-      return;
-    mch[0] = cmt.indexOf('trace');
-    mch[1] = cmt.indexOf('kdisp');
-    mch[2] = cmt.indexOf('none');
+    mch[0] = cmt.indexOf('$trace');
+    mch[1] = cmt.indexOf('$kdisp');
+    mch[2] = cmt.indexOf('$none');
     if (-1 < mch[0])
-      this.cfg.all = true;
+      this.cfg.trace = true;
     if (-1 < mch[1])
-      this.cfg.state = true;
+      this.cfg.kdisp = true;
     if (-1 < mch[2])
     {
-      this.cfg.all = false;
-      this.cfg.state = false;
+      this.cfg.trace = false;
+      this.cfg.kdisp = false;
+    }
+    if (this.cfg.interactive)
+    {
+      if (0 === cmt.indexOf('gate'))
+      {
+        process.stdout.write(':H :X :Y :Z :I :S :T :s :t :Cx :Cr :Cct Swct Tfcct Imq - c control, t target, q qubits\n');
+        process.stdout.write('single qubit gates :H :X :Y :Z :I :S :T :s :t may also have a control suffix\n');
+      }
     }
   }
   getCommentProcessor()
@@ -190,6 +197,8 @@ class QDeskInterpret
     case 'H':
     case 'S':
     case 'T':
+    case 's':
+    case 't':
       op = this.base_set[bas];
       if (kx < jx)
       {
@@ -213,10 +222,6 @@ class QDeskInterpret
           throw new Error('gate ' + opc + ' is unknown');
         }
       }
-      break;
-    case 's':
-    case 't':
-      op = this.base_set[bas].adjoint();
       break;
     case 'Cx':
       op = this.Quantum.controlledNotGate;
@@ -287,6 +292,12 @@ class QDeskInterpret
       break;
     case '0':
       break;
+    // case 'D':
+    //   c1 = parseInt(opc.charAt(kx + 1));
+    //   if (isNaN(c1))
+    //     c1 = 1;
+    //   op = this.Quantum.buildDGate(c1);
+    //   break;
     default:
       if (undefined === this.base_set[bas])  // if the gate name is not known, see if we can build it
         throw new Error(opc + ' unimplemented');
@@ -304,6 +315,58 @@ class QDeskInterpret
     this.inst_set[opc] = op;
     return op;
   }
+  stepDisplay(eq, lst) {
+    if (this.cfg.trace)
+    {
+      if (this.cfg.kdisp || 1 === eq.columns())
+      {
+        if (1 === eq.columns())
+          this.write(this.util.format('%s [%s]\n', lst, eq.qdisp()));
+        else if (33 > eq.columns())
+          this.write(this.util.format('%s [%s]\n', lst, eq.disp()));
+        else
+          this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
+      }
+      else
+      {
+        if (33 > eq.columns())
+          this.write(this.util.format('%s=\n%s\n', lst, eq.edisp()));
+        else
+          this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
+      }
+    }
+  }
+  finalDisplay(eq, init, lst) {
+    //if (!this.cfg.trace)
+    {
+      if (1 === eq.columns())
+      {
+        if (33 > eq.columns())
+        {
+          if (this.cfg.kdisp)
+            this.write(this.util.format('[%s] %s %s\n', init, lst, eq.qdisp()));
+          else
+            this.write(this.util.format('[%s] %s [%s]\n', init, lst, eq.transpose().disp()));
+        }
+        else
+          this.write(this.util.format('large %dx%d quantum state display suppressed\n', eq.rows(), eq.columns()));
+      }
+      else
+      {
+        if (33 > eq.columns())
+          this.write(this.util.format('[%s] %s [\n%s]\n', init, lst, eq.edisp()));
+        else
+          this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
+      }
+    }
+    // else
+    // {
+    //   if (33 > eq.columns())
+    //     this.write(this.util.format('[%s] %s [\n%s]\n', init, lst, eq.edisp()));
+    //   else
+    //     this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
+    // }
+  }
   run(pgm, qst) {
     let eq, ix, first, nm, lst, init, ms, mc;
     if (arguments.length >= 2 && null != qst)
@@ -313,16 +376,16 @@ class QDeskInterpret
       eq = qst[0].clone();
       first = false;
       lst = '';
-      if (this.cfg.state)
+      if (this.cfg.kdisp)
         init = eq.qdisp();
       else
         init = eq.transpose().disp();
-      if (this.cfg.all)
+      if (this.cfg.trace)
         this.write(this.util.format('[%s]\n', eq.qdisp()));
       for (ix = 1; ix < qst.length; ++ix)
       {
         eq = eq.tensorprod(qst[ix]);
-        if (this.cfg.all)
+        if (this.cfg.trace)
           this.write(this.util.format('[%s]\n', eq.qdisp()));
       }
     }
@@ -363,9 +426,10 @@ class QDeskInterpret
         // lst = nm + '(' + lst + ')';
         lst += ' ' + nm;
       }
-      if (this.cfg.all)
+      this.stepDisplay(eq, lst);
+      /*if (this.cfg.trace)
       {
-        if (this.cfg.state || 1 === eq.columns())
+        if (this.cfg.kdisp || 1 === eq.columns())
         {
           if (1 === eq.columns())
             this.write(this.util.format('%s [%s]\n', lst, eq.qdisp()));
@@ -381,37 +445,9 @@ class QDeskInterpret
           else
             this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
         }
-      }
+      }*/
     }
-    if (!this.cfg.all)
-    {
-      if (1 === eq.columns())
-      {
-        if (33 > eq.columns())
-        {
-          if (this.cfg.state)
-            this.write(this.util.format('[%s] %s %s\n', init, lst, eq.qdisp()));
-          else
-            this.write(this.util.format('[%s] %s [%s]\n', init, lst, eq.transpose().disp()));
-        }
-        else
-          this.write(this.util.format('large %dx%d quantum state display suppressed\n', eq.rows(), eq.columns()));
-      }
-      else
-      {
-        if (33 > eq.columns())
-          this.write(this.util.format('[%s] %s [\n%s]\n', init, lst, eq.edisp()));
-        else
-          this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
-      }
-    }
-    else
-    {
-      if (33 > eq.columns())
-        this.write(this.util.format('[%s] %s [\n%s]\n', init, lst, eq.edisp()));
-      else
-        this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
-    }
+    this.finalDisplay(eq, init, lst);
     return eq;
   }
   exec (stmt) {
@@ -455,7 +491,7 @@ class QDeskInterpret
             throw new Error('logic: not Gate object in Gate sequence');
           sq = sq.next;
         }
-        eq = this.run(pgm, null, {all:false, state:false});
+        eq = this.run(pgm, null, {trace:false, kdisp:false});
         this.base_set[ng.name] = eq;
         return this.test_out;
       }
