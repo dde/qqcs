@@ -12,3 +12,9 @@
 - [**#6**](https://github.com/dde/qqcs/issues/6) No syntax error when complex suffix i is used without a preceding number
 ## [**1.1.2**](https://github.com/dde/qqcs/issues?milestone=7&state=closed)
 - [**#7**](https://github.com/dde/qqcs/issues/7) Loop in interactive execution when line beginning with a comment (#) is entered
+## [**1.1.3**](https://github.com/dde/qqcs/issues?milestone=8&state=closed)
+- [**#8**](https://github.com/dde/qqcs/issues/8) Windows backspace not supported in interactive mode
+## [**1.1.3**](https://github.com/dde/qqcs/issues?milestone=9&state=closed)
+- [**#9**](https://github.com/dde/qqcs/issues/9) Control suffixes do not work for S adjoint and T adjoint gates.
+## [**1.1.3**](https://github.com/dde/qqcs/issues?milestone=10&state=closed)
+- [**#10**](https://github.com/dde/qqcs/issues/10) V1.1.3 Enhancements
