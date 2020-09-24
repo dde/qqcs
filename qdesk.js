@@ -110,11 +110,11 @@
   let lex, compiler, interp, stmt;
   let tt, intro =
       ['Quick Quantum Circuit Simulation\n',
-        '  left arrow - move cursor left; right arrow - move cursor right\n',
-        '  delete - delete character to the left of the cursor and shift characters left\n',
+        '  left arrow - move cursor left;  right arrow - move cursor right\n',
+        '  delete (Mac) - delete the character left of cursor and shift characters left\n',
+        '  backspace (Win) - same as delete\n',
         '  insert - automatic when cursor is not at end-of-line\n',
-        '  up arrow - recall line history\n',
-        '  down arrow - reverse history\n',
+        '  up arrow - recall line history;  down arrow - reverse history\n',
         '  ctrl-D, ctrl-C - end session\n'];
   let cfg = {
     files: [],
@@ -134,10 +134,10 @@
     usage();
   if (cfg.interactive || 0 === cfg.files.length)
   {
-    tt = require('./qdesk_interactive.js');
-    lex = new qd.QDeskLexer('interactive');
-    interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp});
+    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, interactive:true});
+    lex = new qd.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
+    tt = require('./qdesk_interactive.js');
     tt.terminal(interpret_cb, intro);
   }
   else
@@ -146,8 +146,8 @@
     for (ix = 0; ix < cfg.files.length; ++ix)
     {
       console.log('--- file:%s---', cfg.files[ix])
-      lex = new qd.QDeskLexer(cfg.files[ix]);
-      interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp});
+      interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp});
+      lex = new qd.QDeskLexer(cfg.files[ix],  interp.getCommentProcessor());
       compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
       // if (cfg.skel)
       // {
