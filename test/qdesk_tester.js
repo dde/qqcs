@@ -61,9 +61,9 @@ function cmdArgs(config, usage) {
   }
   return true;
 }
-let ql = require('../qdesk_lexer.js'),
-    qq = require('../qdesk_compile.js'),
-    qi = require('../qdesk_interpret.js');
+let ql = require('./qdesk_lexer.js'),
+    qq = require('./qdesk_compile.js'),
+    qi = require('./qdesk_interpret.js');
 let tkn, ix;
 let tfil, lex, compiler, interp, stmt;
 let cfg = {
@@ -80,8 +80,8 @@ let tt, tc, tst, tstout, assert, fai, util;
     assert = require('assert').strict;
     util = require('util');
     tc = require('./test_cases.js');
-    lex = new ql.QDeskLexer('interactive');
-    interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp, test:true});
+    interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp, test:true, interactive:true});
+    lex = new ql.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, ql.Symbol, interp);
     fail = 0;
     for (ix = 0; ix < tc.test_cases.length; ++ix)
@@ -92,11 +92,14 @@ let tt, tc, tst, tstout, assert, fai, util;
         lex.setSourceLine(tst.stmt);
         if (undefined !== tst.flags)
           interp.setFlags(tst.flags);
-        else
-          interp.clearFlags();
+        // else
+        //   interp.clearFlags();
         stmt = compiler._stmt();
-        assert.notStrictEqual(stmt, null);
-        tstout = interp.exec(stmt);
+        if (null !== stmt)
+        // assert.notStrictEqual(stmt, null);
+          tstout = interp.exec(stmt);
+        else
+          tstout = [];
         assert.notStrictEqual(tstout, undefined);
         assert.strictEqual(tstout.join(''), tst.expect);
         tkn = lex.next_token();
@@ -105,7 +108,7 @@ let tt, tc, tst, tstout, assert, fai, util;
       }
       catch (e)
       {
-        console.log('error:%s; id:%d %s', e.message, tst.id, tst.stmt);
+        console.log('error:%s\nid:%d %s', e.message, tst.id, tst.stmt);
         fail += 1;
       }
     }
@@ -113,7 +116,7 @@ let tt, tc, tst, tstout, assert, fai, util;
   }
   else
   {
-    interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp});
+    interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp, interactive:false});
     for (ix = 0; ix < cfg.files.length; ++ix)
     {
       tfil = cfg.files[ix];
