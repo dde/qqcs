@@ -61,9 +61,9 @@ function cmdArgs(config, usage) {
   }
   return true;
 }
-let ql = require('./qdesk_lexer.js'),
-    qq = require('./qdesk_compile.js'),
-    qi = require('./qdesk_interpret.js');
+let ql = require('../qdesk_lexer.js'),
+    qq = require('../qdesk_compile.js'),
+    qi = require('../qdesk_interpret.js');
 let tkn, ix;
 let tfil, lex, compiler, interp, stmt;
 let cfg = {
@@ -79,7 +79,7 @@ let tt, tc, tst, tstout, assert, fai, util;
   {
     assert = require('assert').strict;
     util = require('util');
-    tc = require('./test_cases-5.js');
+    tc = require('./test_cases.js');
     interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp, test:true, interactive:true});
     lex = new ql.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, ql.Symbol, interp);
@@ -112,7 +112,7 @@ let tt, tc, tst, tstout, assert, fai, util;
         fail += 1;
       }
     }
-    console.log('assertion failures:%d', fail);
+    console.log('assertion failures:%d, out of %d test cases', fail, tc.test_cases.length);
   }
   else
   {
