@@ -1,6 +1,6 @@
 # QQCS - Quick Quantum Circuit Simulation
 
-##Notes on Version 1.2.0
+## Notes on Version 1.2.0
 
 Version 1.2.0 introduces several upward incompatibilities in order to expand the set of gates supported and to
 simplify the syntax:
@@ -17,7 +17,7 @@ New features in version 1.2.0 include:
     * Rx(𝜃), Ry(𝜃), and Rz(𝜃) rotation gates
     * U(𝜃,𝜙,λ), general rotation gate (U1, U2, and U3) based on a three parameter general 2x2 unitary matrix 
 
-##Overview
+## Overview
 
 The student new to Quantum Computing immediately confronts the steep hurdle of the mathematics of complex vector
  spaces needed to understand the basic concepts
@@ -38,7 +38,7 @@ QQCS can also be used by the quantum experimentalist.  It can test the operation
 displaying the output of each step as a quantum state, an equivalent gate, or a measure of one or more qubits, and it can
 quickly run through alternatives. 
 
-##Quantum Circuit Simulation
+## Quantum Circuit Simulation
 
 A circuit simulation is not a quantum computer simulation.  It is a mathematical rendering of each step of a quantum
  algorithm that is described by a sequence of gate operations on an initial quantum state.
@@ -47,7 +47,7 @@ The underlying software system renders the simulation. Quick Quantum Circuit Sim
 The system allows a student to quickly construct a circuit using a linear notation motivated by the circuits
 themselves, and to acquire the information to analyze an algorithm quickly without the need for tedious calculations.
 
-##Introduction
+## Introduction
 
 The following gate sequence \[6\] may or may not implement a controlled Hadamard gate.  How is one to tell?
 
@@ -59,7 +59,7 @@ You can write a QuTIP \[9\] program in Python, or use Python interactively to in
 
 Or you can interactively enter a single QQCS statement
 
-##A QQCS Statement
+## A QQCS Statement
 
 Here is the interactive QQCS statement and its output to answer the question (the \[ 1\] is the line number prompt):
 
@@ -75,7 +75,7 @@ Here is the interactive QQCS statement and its output to answer the question (th
 Although first two diagonal elements should be 1, it looks like a factor of ```cos π/4 + isin π/4``` would make that so,
  meaning the circuit could very well be equivalent to a global phase with a controlled Hadamard gate
 
-##QQCS Statement Detail
+## QQCS Statement Detail
 
 Circuit steps syntactically begin with a colon (:) and combine gates, given their standard names, with ungated
 qubit lines indicated by underscores (_), in sequence from the top to the bottom of the lines in the circuit.
@@ -91,7 +91,7 @@ control line (or lines) followed by the target line, so :C01 is a CNOT with cont
 Control and target lines are relative to the span of the controlled gate, so "_" prefixes and suffixes do not
 change the numbering of the controls and target.
 
-##Basic Available Gates
+## Basic Available Gates
 
 <table>
 <tr><th colspan="2">1-Qubit</th><th colspan="2">2-Qubit</th></tr>
@@ -112,7 +112,7 @@ change the numbering of the controls and target.
 <tr><td></td><td></td><td>M</td><td>Qubit measurement pseudo-gate</td></tr>
 </table>
 
-##Rotational Gates
+## Rotational Gates
 
 All the rotational gates specify the angle parameters as factors of π radians, with π implicit.
 Thus, Rx(.5) is an X-axis rotation of π/2 radians, or 90 degrees.  The parameter range for all angles is [0,4).
@@ -130,7 +130,7 @@ The Ry(𝜃) gate is equivalent to U(𝜃,0,0).
 
 The Rz(λ) gate is equivalent to U(0,0,λ).
    
-##Gate Positioning and Replication
+## Gate Positioning and Replication
 
 Ungated lines (\_) have already been mentioned.  They may be repeated as many times as needed (subject to maximum
 qubit restriction) to position a gate on the correct line.  For example, :\_\_X\_\_ designates an X-gate on line
@@ -144,7 +144,7 @@ As an alternative, the gate name can be repeated. :HHHH is the same as :H4.
 Non-adjacent gates are handled by infixed underscores (\_), such as :_X_X, which puts two X gates on lines 1 and 3
 of a 4-qubit circuit.
 
-##Controlled Gate Names
+## Controlled Gate Names
 
 <img src="img/Screen Shot 2020-05-03 at 8.30.54 PM.png" width="645" height="268" alt="suffix notation corresponding to CNOT gates in a circuit"/>
 
@@ -160,7 +160,7 @@ Lines within the span that are not control or target lines are ungated by implic
 
 Any single qubit gate can be followed by a control suffix to make it a controlled gate.
 
-##Display
+## Display
 
 The default display is the resulting gate matrix or a quantum state transposed column vector.
 
@@ -173,7 +173,7 @@ The trace (-t) flag causes a display of output at each step in the gate sequence
     * If there was an initial value, the trace is of each quantum state
     * If no initial value, the trace is the equivalent gate matrix to that point in the circuit
 
-##Measurement
+## Measurement
 
 The M pseudo-gate signifies measurement.
 
@@ -188,7 +188,7 @@ Measurement is purely a mathematical display and does not cause state collapse.
 
 Any subset of the qubit lines can be measured.  Use the ungated notation to position M pseudo-gates as needed.
 
-##Initial Values
+## Initial Values
 
 A gate sequence execution does not automatically start with a qubit value. This allows the computation and display
 of an equivalent gate matrix, a sequence of gate matrix products.
@@ -203,7 +203,7 @@ computing ket notation.
       no division, but see factoring below.
     * The initial value is ended by the first colon of the gate sequence
     
-##Initial Value Tensor Products
+## Initial Value Tensor Products
 
 Larger initial values can be composed using the tensor product by surrounding a ket expression with parentheses.
 
@@ -213,7 +213,7 @@ Larger initial values can be composed using the tensor product by surrounding a 
     
 If the tensor product is all that is needed, terminate the statement with a return. No gate sequence is necessary.
 
-##Factoring
+## Factoring
 
 A Quantum Fourier Transform circuit \[5\] can be difficult to recognize without factoring.
 
@@ -246,7 +246,7 @@ gate sequence, will factor out the number before the final display.
 1  0.707-0.707i -1i -0.707-0.707i ...
 ```
 
-##Custom Gates
+## Custom Gates
 
 A gate sequence can be named and saved for future use.  Simply precede the gate sequence with a name.
 
@@ -266,7 +266,7 @@ Custom gates allow new gates to be defined.  The square root of X (square root N
 ```sn:Rx(.5)/.707-.707i```.  This statement assigns the custom gate ```sn``` a π/2 Rx rotation, after factoring out
 the global phase ```exp(-iπ/4)```.  To verify, look at the result ```:sn:sn```.  Square root NOT squared is X.
 
-##Comments
+## Comments
 
 Comments are introduced by the hash character (#) and continue until the end of the line.
 
@@ -276,12 +276,12 @@ In interactive mode, it is possible to set switch controls by preceding the swit
     trace - display the resulting quantum state (or equivalent matrix) at each step of the quantum circuit
     none - turn off kdisp and trace
 
-###Interactive help
+### Interactive help
 
     The keyword gate[s] immediately following the hash character in an interactive comment will display a short
     help regarding the available gates.
 
-##Conclusion
+## Conclusion
 
 QQCS is a simple linear notation for the simulation of quantum circuits.
 
@@ -295,16 +295,16 @@ It can be executed in interactive or batch mode.
 
 QQCS is available through the NodeJS Package Manager, npm, and is executed using NodeJS.
 
-##QQCS Linear Notation Syntax
+## QQCS Linear Notation Syntax
 
-###Meta-symbols
+### Meta-symbols
     ::=       is defined as
     |         alternative
     [ ... ]   zero or more
     e         empty
     'x'       identifies x as a grammar symbol
 
-###Grammar
+### Grammar
 ```
               pgm ::= stmt stmt-list eof
         stmt-list ::= eol stmt stmt-list | e
@@ -331,7 +331,7 @@ QQCS is available through the NodeJS Package Manager, npm, and is executed using
              unop ::= - | e
 ```
 
-##References
+## References
 
 ```
 [1] C. C. Moran (2019) Mastering Quantum Computing with IBM QX,  Birmingham, UK, Packt Publishing.
