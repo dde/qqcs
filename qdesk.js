@@ -24,7 +24,7 @@
     *       mapped to the same property; a flag's value follows the flag name, not separated by spaces
    */
   function cmdArgs(config, usage) {
-    var ix,
+    let ix,
         arg,
         prp,
         flags,
@@ -44,14 +44,16 @@
         for (ix = 2; ix < process.argv.length; ++ix)
         {
           arg = process.argv[ix];
-          if (flags && arg.charAt(0) == '-')
+          if (flags && arg.charAt(0) === '-')
           {
             for (prp in config.flags)
             {
-              if (prp == arg.substring(1, prp.length + 1))
+              if (!config.flags.hasOwnProperty(prp))
+                continue;
+              if (prp === arg.substring(1, prp.length + 1))
               {
                 arg = arg.substring(prp.length + 1);
-                config[config.flags[prp]] = (0 == arg.length) ? true : arg;
+                config[config.flags[prp]] = (0 === arg.length) ? true : arg;
                 continue nextarg;
               }
             }

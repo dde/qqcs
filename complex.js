@@ -278,6 +278,8 @@ Complex.prototype.disp = function() {
     {
       if (this.imag > 0 && 0 !== str.length)
         str += '+';
+      // else if (this.imag < 0)
+      //   str += '-';
       str += Complex.format(this.imag) + 'i';
     }
   }
@@ -320,7 +322,7 @@ Complex.prototype.equal = function (eq)
 Complex.exponents = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000];
 Complex.format = function (d, p)
 {
-  let f, exp;
+  let f, exp, str;
   if (Math.floor(d) === d)
     return String(d);
   if (undefined === p || p < 1)
@@ -329,7 +331,10 @@ Complex.format = function (d, p)
     p = Complex.exponents.length - 1;
   exp = Complex.exponents[p];
   f = Math.floor(d  * exp + 0.5);
-  return String(f / exp);
+  str = String(f / exp);
+  if (f === 0 && d < 0)  // don't lose negative when loss of precision yields 0
+    str = '-' + str;
+  return str;
 };
 
 exports.Complex = Complex;

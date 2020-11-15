@@ -143,7 +143,6 @@ class LexErr extends Error
 class TestReader
 {
   constructor(fn, fs) {
-    let n;
     if (fn === 'interactive')
     {
       this.source = '';
@@ -627,8 +626,39 @@ class QDeskLexer
       if ((_ch >= QDeskLexer.UCA && _ch <= QDeskLexer.UCZ) || (_ch >= QDeskLexer.LCA && _ch <= QDeskLexer.LCZ) ||
            _ch === QDeskLexer.UNDER)
       {
+        if (undefined !== QDeskLexer.gateName1[_ch])
+        {
+          if (QDeskLexer.G1 === QDeskLexer.gateName1[_ch])
+          {
+            this.ltk = new this.Symbol(this.Symbol.gate, _ch);
+            return this.ltk;
+          }
+          _tk = _ch;
+          this.tkn.push(_ch);
+          _ch = this.next();
+          if (_ch >= QDeskLexer.LCA && _ch <= QDeskLexer.LCZ)
+          {
+            if (undefined !== QDeskLexer.gateName2[_tk + _ch])
+            {
+              this.ltk = new this.Symbol(this.Symbol.gate, _tk + _ch);
+              return this.ltk;
+            }
+            else if (QDeskLexer.G12 === QDeskLexer.gateName1[_tk])
+            {
+              this.lookahead(_ch);
+              this.ltk = new this.Symbol(this.Symbol.gate, _tk);
+              return this.ltk;
+            }
+          }
+          else
+          {
+            this.lookahead(_ch);
+            this.ltk = new this.Symbol(this.Symbol.gate, _tk);
+            return this.ltk;
+          }
+        }
         while ((_ch >= QDeskLexer.UCA && _ch <= QDeskLexer.UCZ) || (_ch >= QDeskLexer.LCA && _ch <= QDeskLexer.LCZ) ||
-               (_ch >= QDeskLexer.ZERO && _ch <= QDeskLexer.NINE) || _ch === QDeskLexer.UNDER)
+               (_ch >= QDeskLexer.ZERO && _ch <= QDeskLexer.NINE))
         {
           this.tkn.push(_ch);
           _ch = this.next();
@@ -691,7 +721,7 @@ class QDeskLexer
           // console.log('lex:%s', this.ltk.toString());
           return this.ltk;
         }
-        this.ltk = new this.Symbol(this.Symbol.complex, this.tkn.join('') + '+0i');
+        this.ltk = new this.Symbol(this.Symbol.real, this.tkn.join(''));
         // console.log('lex:%s', this.ltk.toString());
         return this.ltk;
       }
@@ -791,6 +821,38 @@ QDeskLexer.keywords = {
   'CX': 1, 'U': 1
 };
 QDeskLexer.exprKeys = {'pi': 0, 'sin': 0, 'cos': 0, 'tan': 0, 'exp': 0, 'ln': 0, 'sqrt': 0};
+QDeskLexer.G1 = 1;
+QDeskLexer.G2 = 2;
+QDeskLexer.G12 = 3;
+QDeskLexer.gateName1 = {
+  'C': QDeskLexer.G12,
+  // 'D': null,
+  'F': QDeskLexer.G2,
+  'H': QDeskLexer.G1,
+  'I': QDeskLexer.G12,
+  'M': QDeskLexer.G1,
+  'R': QDeskLexer.G2,
+  'S': QDeskLexer.G12,
+  'T': QDeskLexer.G12,
+  'U': QDeskLexer.G1,
+  'X': QDeskLexer.G1,
+  'Y': QDeskLexer.G1,
+  'Z': QDeskLexer.G1,
+  '_': QDeskLexer.G1,
+};
+QDeskLexer.gateName2 = {
+  'Cr': true,
+  'Cx': true,
+  'Fr': true,
+  'Im': true,
+  'Rx': true,
+  'Ry': true,
+  'Rz': true,
+  'Sa': true,
+  'Sw': true,
+  'Ta': true,
+  'Tf': true,
+};
 // function test() {
 //   let tfil, ix;
 //   let qq = require('./qdesk_compile.js'),

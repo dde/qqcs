@@ -18,3 +18,5 @@
 - [**#9**](https://github.com/dde/qqcs/issues/9) Control suffixes do not work for S adjoint and T adjoint gates.
 ## [**1.1.3**](https://github.com/dde/qqcs/issues?milestone=10&state=closed)
 - [**#10**](https://github.com/dde/qqcs/issues/10) V1.1.3 Enhancements
+## [**1.2.0**](https://github.com/dde/qqcs/issues?milestone=11&state=closed)
+- [**#11**](https://github.com/dde/qqcs/issues/11) V1.2.0 Enhancements

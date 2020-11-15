@@ -289,6 +289,9 @@ Quantum.buildPhaseRotation = function (ph) {
 };
 /**
  * Build a three parameter universal gate from QASM
+ * U(theta,phi,lambda)
+ * U(pi/2,phi,lambda) = U(phi,lambda)
+ * U(0,0,lambda) = U(lambda)
  * @param theta angle parameter 1
  * @param phi angle parameter 2
  * @param lambda angle p
@@ -301,6 +304,22 @@ Quantum.buildU = function (theta, phi, lambda) {
       sint2 = Math.sin(theta / 2);
   return new Matrix([Complex.iexp(-plsum).scprodeq(cost2), Complex.iexp(-pldif).scprodeq(-sint2)],
       [Complex.iexp(pldif).scprodeq(sint2), Complex.iexp(plsum).scprodeq(cost2)]);
+};
+/**
+ * Build a three parameter universal gate ala IBM QX5
+ * U(theta,phi,lambda)
+ * U(pi/2,phi,lambda) = U(phi,lambda)
+ * U(0,0,lambda) = U(lambda)
+ * @param theta angle parameter 1
+ * @param phi angle parameter 2
+ * @param lambda angle p
+ * @returns {Matrix}
+ */
+Quantum.buildUe = function (theta, phi, lambda) {
+  let cost2 = Math.cos(theta / 2),
+      sint2 = Math.sin(theta / 2);
+  return new Matrix([cost2, Complex.iexp(lambda).scprodeq(-sint2)],
+      [Complex.iexp(phi).scprodeq(sint2), Complex.iexp(lambda+phi).scprodeq(cost2)]);
 };
 /**
  * Build a 2x2 z-axis rotation matrix from QASM - Rz is U(0,0,ph)
@@ -469,7 +488,7 @@ Quantum.probabilities = function (q) {
  *             bits should be ordered from left to right in circuit order top to bottom
  * @param q the quantum state to be measured
  */
-Quantum.measure = function (mask, q) {
+Quantum.measureX = function (mask, q) {
   function binString(qbs) {
     let bin, sz, ix, str;
     sz = Math.pow(2, qbs);
@@ -510,11 +529,12 @@ Quantum.measure = function (mask, q) {
     throw new Error('argument q length must be a power of 2');
   if (qb > Quantum.qubits)
     throw new Error('argument range error 1 <= qubits <= ' + Quantum.qubits);
-  bin = binString(qb);
-  prob0 = [];
-  prob1 = [];
+  bin = binString(qb);  // a string of basis vectors of size qb, eg. qb=2, ['00', '01', '10', '11']
+  prob0 = [];  // unselected probabilities
+  prob1 = [];  // selected probabilities
   for (jx = 0; jx < qb; ++jx)
   {
+    // for each qubit, selected or not
     if ('1' === mask.charAt(jx))
       prob = prob1;
     else
@@ -526,6 +546,7 @@ Quantum.measure = function (mask, q) {
         m = q.sub(0, ix).mag();
       else
         m = q.sub(ix, 0).mag();
+      // m is the magnitude of the ix'th coeffcient of the quantum state
       if ('0' === bin[ix].charAt(jx))
       {
         zro += m * m;
@@ -582,5 +603,97 @@ Quantum.measure = function (mask, q) {
     }
     rtn[1] = qb;
   }
+  return rtn;
+};
+Quantum.measure = function(mask, q) {
+  function binString(qbs) {
+    let bin, sz, ix, str;
+    sz = Math.pow(2, qbs);
+    bin = [];
+    for (ix = 0; ix < sz; ++ix)
+    {
+      str = (ix).toString(2);
+      while (str.length < qbs)
+      {
+        str = '0' + str;
+      }
+      bin.push(str);
+    }
+    return bin;
+  }
+  function mbase(sel, mask, bas) {
+    let bs, ix;
+    bs = '';
+    for (ix = 0; ix < mask.length; ++ix)
+    {
+     if (sel === mask[ix])
+       bs += bas[ix];
+    }
+    return bs;
+  }
+  function cc(a, b) {
+    return (a < b) ? -1 : ((a > b) ? 1 : 0);
+  }
+  let sz, qb, ix, jx, m, rv, bin, zro, one, prob, prob0, prob1, rtn, bs;
+  let rws = q.rows(), cols = q.columns();
+  if (1 === rws)
+  {
+    rv = true;
+    sz = cols;
+  }
+  else if (1 === cols)
+  {
+    rv = false;
+    sz = rws;
+  }
+  else
+    throw new Error('argument q must be a row or column vector');
+  ix = 2;
+  qb = 1;
+  while (ix < sz)
+  {
+    qb += 1;
+    ix = 2 * ix;
+  }
+  if (ix !== sz)
+    throw new Error('argument q length must be a power of 2');
+  if (qb > Quantum.qubits)
+    throw new Error('argument range error 1 <= qubits <= ' + Quantum.qubits);
+  bin = binString(qb);  // a string of basis vectors of size qb, eg. qb=2, ['00', '01', '10', '11']
+  prob0 = {};
+  prob1 = {};
+  for (ix = 0; ix < bin.length; ++ix)
+  {
+    if (rv)
+      m = q.sub(0, ix).mag();
+    else
+      m = q.sub(ix, 0).mag();
+    // m is the magnitude of the ix'th coeffcient of the quantum state
+    if (0.0 === m)
+      continue;
+    m *= m;
+    bs = mbase('1', mask, bin[ix]);
+    if (undefined === prob1[bs])
+      prob1[bs] = 0.0;
+    prob1[bs] += m;
+    bs = mbase('0', mask, bin[ix]);
+    if (0 === bs.length)
+      continue;
+    if (undefined === prob0[bs])
+      prob0[bs] = 0.0;
+    prob0[bs] += m;
+  }
+  qb = [];
+  for (bs in prob1)
+  {
+    qb.push(bs + ':' + Complex.format(prob1[bs], 3));
+  }
+  rtn = [qb.sort(cc)];
+  qb = [];
+  for (bs in prob0)
+  {
+    qb.push(bs + ':' + Complex.format(prob0[bs], 3));
+  }
+  rtn.push(qb.sort(cc));
   return rtn;
 };

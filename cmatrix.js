@@ -467,7 +467,9 @@ CMatrix.prototype.qdisp = function() {
         }
       }
       else
-        coef = '';
+      {
+        coef = (0 === qout.length) ? '' : '+';
+      }
       qout.push(coef + basis)
     }
   }

@@ -689,7 +689,10 @@ class SpMatrix
           }
         }
         else
+        {
+          coef = (0 === qout.length) ? '' : '+';
           coef = '';
+        }
         qout.push(coef + basis)
       }
     }

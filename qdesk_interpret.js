@@ -8,10 +8,15 @@ class LogicErr extends Error
     super(msg);
   }
 }
+class GatErr extends Error
+{
+  constructor(msg, lex) {
+    super(msg + ' at line ' + String(lex.linenumber) + ':' + String(lex.position));
+  }
+}
 class QDeskInterpret
 {
-  constructor(cfg)
-  {
+  constructor(cfg) {
     if (undefined === QDeskInterpret.single)
     {
       QDeskInterpret.single = this;
@@ -54,28 +59,48 @@ class QDeskInterpret
     }
     this.test_out = null;
     this.base_set = {
-      'I': this.Quantum.iGate,
-      'X': this.Quantum.xGate,
-      'Y': this.Quantum.yGate,
-      'Z': this.Quantum.zGate,
-      'H': this.Quantum.hGate,
-      'M': null,
-      'S': this.Quantum.sGate,
-      'T': this.Quantum.tGate,
-      's': this.Quantum.sGate.adjoint(),
-      't': this.Quantum.tGate.adjoint(),
       'C': null,
       'Cr': null,
       'Cx': null,
-      'Im':null,
-      'Sw': null,
-      'Tf': null,
+      // 'D': null,
+      'Fr':null,
+      'H': this.Quantum.hGate,
+      'I': this.Quantum.iGate,
+      'Im': null,
+      'M': null,
       'Rx': null,
       'Ry': null,
       'Rz': null,
-      // 'D': null,
+      'S': this.Quantum.sGate,
+      'Sa': this.Quantum.sGate.adjoint(),
+      'Sw': null,
+      'T': this.Quantum.tGate,
+      'Ta': this.Quantum.tGate.adjoint(),
+      'Tf': null,
+      'U': null,
+      'X': this.Quantum.xGate,
+      'Y': this.Quantum.yGate,
+      'Z': this.Quantum.zGate,
+      '_': this.Quantum.iGate,
     };
     this.inst_set = [];
+    this.sym = {};
+    this.sym.None = 0;
+    this.sym.Eol = this.sym.None + 1;
+    this.sym.Gate = this.sym.Eol + 1;
+    this.sym.Lparen = this.sym.Gate + 1;
+    this.sym.Rparen = this.sym.Lparen + 1;
+    this.sym.Comma = this.sym.Rparen + 1;
+    this.sym.Minus = this.sym.Comma + 1;
+    this.sym.Digit = this.sym.Minus + 1;
+    this.sym.Decimal = this.sym.Digit + 1;
+    this.lex = {cix:0,
+      cln:0,
+      pbk:null,
+      token:'',
+      symbol:this.sym.None,
+      next_token:this.gate_lexer,
+      pushback:this.push_back};
   }
   clearFlags() {
     this.cfg.trace = false;
@@ -87,8 +112,7 @@ class QDeskInterpret
     if (undefined !== cfg.kdisp)
       this.cfg.kdisp = Boolean(cfg.kdisp);
   }
-  commentProcessor(cmt)
-  {
+  commentProcessor(cmt) {
     let mch = [];
     mch[0] = cmt.indexOf('$trace');
     mch[1] = cmt.indexOf('$kdisp');
@@ -123,12 +147,15 @@ class QDeskInterpret
   {
     this.test_out.push(line);
   }
-  analyze_opcode(opc) {
-    let ch, pw, ix, jx, kx, bas, pf, sf, ln, op, c1, c2, t1;
+  analyze_opcode(gat) {
+    let bas, ph, sf, op, c1, c2, t1;
+    let opc;
     function tpower(pwr, mt)
     {
       let pw, ct, op = null;
       pw = parseInt(pwr);
+      if (pw < 2)
+        return mt;
       ct = 1;
       while (ct < pw)
       {
@@ -139,80 +166,21 @@ class QDeskInterpret
       }
       return op;
     }
-    ln = opc.length - 1;
-    for (ix = 0; ix <= ln; ++ix)  // find the i prefix
-    {
-      if ('i' !== opc.charAt(ix))
-        break;
-    }
-    for (jx = ln; jx >= 0; --jx)  // find the i suffix
-    {
-      if ('i' !== opc.charAt(jx))
-        break;
-    }
-    for (kx = jx; kx >= 0; --kx)  // find the digit string suffix if any
-    {
-      ch = opc.charAt(kx);
-      if (ch < '0' || ch > '9')
-        break;
-    }
-    bas = opc.substring(ix, kx + 1);  // extract the base gate name
-    if (undefined === this.base_set[bas])  // if the gate name is not known, see if we can build it
-    {
-      for (kx = jx; kx >= ix; --kx)
-      {
-        ch = opc.charAt(kx);
-        if (undefined !== this.base_set[ch])
-        {
-          if (kx < jx)
-            op = this.base_set[ch].tensorprod(op);
-          else
-            op = this.base_set[ch]
-          continue;
-        }
-        if (kx > 0 && (ch === 'f' || ch === 'm' || ch === 'r' || ch === 'x' || ch === 'y' || ch === 'z' || ch === 'w'))
-        {
-          ch += opc.charAt(--kx);
-        }
-        if (undefined !== this.base_set[ch])
-        {
-          if (kx < ln)
-            op = this.base_set[ch].tensorprod(op);
-          else
-            op = this.base_set[ch]
-        }
-        else
-          throw new Error('gate ' + opc + ' is unknown');
-      }
-      bas = '0';
-    }
-    pf = (ix > 0) ? this.Quantum.buildIn(ix) : null;
-    sf = (jx < ln) ? this.Quantum.buildIn(ln - jx) : null;
-    switch (bas)
-    {
-    case 'I':
-    case 'X':
-    case 'Y':
-    case 'Z':
-    case 'H':
-    case 'S':
-    case 'T':
-    case 's':
-    case 't':
-      op = this.base_set[bas];
-      if (kx < jx)
+    function suffix(ths, sf, op, opc) {
+      let c1, t1;
+      if (sf.length > 0)
       {
         try
         {
-          if (1 === jx - kx)
+          if (1 === sf.length)
           {
-            op = tpower(opc.substring(kx + 1, jx + 1), this.base_set[bas]);
+            op = tpower(sf, op);
           }
-          else if (2 === jx - kx)
+          else if (2 === sf.length)
           {
-            c1 = parseInt(opc.charAt(kx + 1));
-            t1 = parseInt(opc.charAt(kx + 2));
-            op = this.Quantum.buildControlled(Math.abs(c1 - t1) + 1, c1, t1, this.base_set[bas]);
+            c1 = parseInt(sf.charAt(0));
+            t1 = parseInt(sf.charAt(1));
+            op = ths.Quantum.buildControlled(Math.abs(c1 - t1) + 1, c1, t1, op);
           }
           else
             throw new Error('gate ' + opc + ' is unknown');
@@ -222,6 +190,30 @@ class QDeskInterpret
           throw new Error('gate ' + opc + ' is unknown');
         }
       }
+      return op;
+    }
+    opc = gat.opcode;
+    if (undefined !== this.inst_set[opc])
+      return;
+    bas = gat.name;
+    sf = gat.getSuffix();
+    ph = gat.getAngles();
+    switch (bas)
+    {
+    case 'H':
+    case 'I':
+    case 'S':
+    case 'Sa':
+    case 'T':
+    case 'Ta':
+    case 'X':
+    case 'Y':
+    case 'Z':
+      op = this.base_set[bas];
+      op = suffix(this, sf, op, opc);
+      break;
+    case '_':
+      op = this.base_set[bas];
       break;
     case 'Cx':
       op = this.Quantum.controlledNotGate;
@@ -230,87 +222,87 @@ class QDeskInterpret
       op = this.Quantum.buildCNOT(2, 1, 0);
       break;
     case 'C':
-      if (2 !== jx - kx)
+      if (2 !== sf.length)
         throw new Error('opcode ' + opc + ' is unknown');
-      c1 = parseInt(opc.charAt(kx + 1));
-      t1 = parseInt(opc.charAt(kx + 2));
+      c1 = parseInt(sf.charAt(0));
+      t1 = parseInt(sf.charAt(1));
       op = this.Quantum.buildCNOT(Math.abs(c1 - t1) + 1, c1, t1);
       break;
     case 'Im':
-      c1 = parseInt(opc.charAt(kx + 1));
-      if (isNaN(c1))
+      if (sf.length > 1)
+        throw new Error('opcode ' + opc + ' is unknown');
+      if (1 === sf.length)
+        c1 = parseInt(sf);
+      else
         c1 = 1;
       op = this.Quantum.buildMeanInversion(c1);
       break;
     case 'Sw':
-      if (2 !== jx - kx)
+      if (2 !== sf.length)
         throw new Error('opcode ' + opc + ' is unknown');
-      c1 = parseInt(opc.charAt(kx + 1));
-      c2 = parseInt(opc.charAt(kx + 2));
+      c1 = parseInt(sf.charAt(0));
+      c2 = parseInt(sf.charAt(1));
       op = this.Quantum.buildSwap(Math.abs(c1 - c2) + 1, c1, c2);
       break;
     case 'Tf':
-      if (3 !== jx - kx)
+      if (3 !== sf.length)
         throw new Error('opcode ' + opc + ' is unknown');
-      c1 = parseInt(opc.charAt(kx + 1));
-      c2 = parseInt(opc.charAt(kx + 2));
-      t1 = parseInt(opc.charAt(kx + 3));
+      c1 = parseInt(sf.charAt(0));
+      c2 = parseInt(sf.charAt(1));
+      t1 = parseInt(sf.charAt(2));
       op = this.Quantum.buildToffoli(Math.max(c1, c2, t1) - Math.min(c1, c2, t1) + 1, c1, c2, t1);
       break;
     case 'M':
-      // measurement
-      pw = [];
-      pw.push('0'.repeat(ix));
-      if (kx < jx)
+      return;
+    case 'Rx':
+      if (ph.length !== 1)
+        throw new Error('gate ' + opc + ' is unknown');
+      op = this.Quantum.buildRx(ph[0] * Math.PI);
+      op = suffix(this, sf, op, opc);
+      break;
+    case 'Ry':
+      if (ph.length !== 1)
+        throw new Error('gate ' + opc + ' is unknown');
+      op = this.Quantum.buildRy(ph[0] * Math.PI);
+      op = suffix(this, sf, op, opc);
+      break;
+    case 'Rz':
+      if (ph.length !== 1)
+        throw new Error('gate ' + opc + ' is unknown');
+      op = this.Quantum.buildRz(ph[0] * Math.PI);
+      op = suffix(this, sf, op, opc);
+      break;
+    case 'U':
+      if (ph.length < 1 || ph.length > 3)
+        throw new Error('gate ' + opc + ' is unknown');
+      if (1 === ph.length)
       {
-        try
-        {
-          pw.push('1'.repeat(parseInt(opc.substring(kx + 1, jx + 1))));
-        }
-        catch (e)
-        {
-          throw new Error('gate ' + opc + ' is unknown');
-        }
+        op = this.Quantum.buildU(0, 0, ph[0] * Math.PI);
+      }
+      else if (2 === ph.length)
+      {
+        op = this.Quantum.buildU(Math.PI / 2, ph[0] * Math.PI, ph[1] * Math.PI);
       }
       else
       {
-        for (kx = 0; kx < bas.length; ++kx)
-        {
-          ch = bas.charAt(kx);
-          if ('M' === ch)
-          {
-            pw.push('1');
-          }
-        }
+        op = this.Quantum.buildU(ph[0] * Math.PI, ph[1] * Math.PI, ph[2] * Math.PI);
       }
-      pw.push('0'.repeat(ln - jx));
-      op = QDeskInterpret.single.Quantum.measure.bind(null, pw.join(''));
-      pf = null;
-      sf = null;
+      op = suffix(this, sf, op, opc);
       break;
     case '/':
       break;
     case '0':
       break;
-    // case 'D':
-    //   c1 = parseInt(opc.charAt(kx + 1));
-    //   if (isNaN(c1))
-    //     c1 = 1;
-    //   op = this.Quantum.buildDGate(c1);
-    //   break;
+        // case 'D':
+        //   c1 = parseInt(opc.charAt(kx + 1));
+        //   if (isNaN(c1))
+        //     c1 = 1;
+        //   op = this.Quantum.buildDGate(c1);
+        //   break;
     default:
-      if (undefined === this.base_set[bas])  // if the gate name is not known, see if we can build it
+      if (undefined === this.inst_set[bas])
         throw new Error(opc + ' unimplemented');
-      op = this.base_set[bas];  // will be reset below
-      break;
-    }
-    if (null !== pf)
-    {
-      op = pf.tensorprod(op);
-    }
-    if (null !== sf)
-    {
-      op = op.tensorprod(sf);
+      return this.inst_set[bas];
     }
     this.inst_set[opc] = op;
     return op;
@@ -427,30 +419,12 @@ class QDeskInterpret
         lst += ' ' + nm;
       }
       this.stepDisplay(eq, lst);
-      /*if (this.cfg.trace)
-      {
-        if (this.cfg.kdisp || 1 === eq.columns())
-        {
-          if (1 === eq.columns())
-            this.write(this.util.format('%s [%s]\n', lst, eq.qdisp()));
-          else if (33 > eq.columns())
-            this.write(this.util.format('%s [%s]\n', lst, eq.disp()));
-          else
-            this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
-        }
-        else
-        {
-          if (33 > eq.columns())
-            this.write(this.util.format('%s=\n%s\n', lst, eq.edisp()));
-          else
-            this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
-        }
-      }*/
     }
     this.finalDisplay(eq, init, lst);
     return eq;
   }
   exec (stmt) {
+    // assemble a chain of circuit steps into an executable program
     let sq,
         qst = null,
         ng = null,
@@ -477,29 +451,12 @@ class QDeskInterpret
       {
         ng = sq;
         sq = sq.next;
-        while (null != sq)
-        {
-          if (sq instanceof Gate)
-          {
-            pgm.push(sq.name);
-          }
-          else if (sq instanceof GateFactor)
-          {
-            break;  // GateFactor will be ignored on gate sequence assignment
-          }
-          else
-            throw new Error('logic: not Gate object in Gate sequence');
-          sq = sq.next;
-        }
-        eq = this.run(pgm, null, {trace:false, kdisp:false});
-        this.base_set[ng.name] = eq;
-        return this.test_out;
       }
       while (null != sq.next)
       {
         if (!(sq instanceof Gate))
           throw new Error('logic: not Gate object in Gate sequence');
-        pgm.push(sq.name);
+        pgm.push(sq.opcode);
         sq = sq.next;
       }
       if (sq instanceof GateFactor)
@@ -510,10 +467,19 @@ class QDeskInterpret
       {
         if (!(sq instanceof Gate))
           throw new Error('logic: not Gate object in Gate sequence');
-        pgm.push(sq.name);
+        pgm.push(sq.opcode);
       }
     }
-    this.run(pgm, qst);
+    if (ng != null)
+    {
+      eq = this.run(pgm, null, {trace: false, kdisp: false});
+      // this.base_set[ng.name] = eq;
+      this.inst_set[ng.name] = eq;
+    }
+    else
+    {
+      this.run(pgm, qst);
+    }
     return this.test_out;
   }
 }
@@ -528,6 +494,11 @@ class Operand
   }
   get opcode()
   {
+    return this._opcode;
+  }
+  set opcode(opc)
+  {
+    this._opcode = opc;
     return this._opcode;
   }
   get next()
@@ -549,6 +520,8 @@ Operand.GATE = 2;
 Operand.KET = 3;
 Operand.GFACTOR = 4;
 Operand.NMGATE = 5;
+Operand.UNGATE = '_';
+Operand.MGATE = 'M';
 class Qubit extends Operand
 {
   constructor(ka) {
@@ -627,12 +600,36 @@ class Qubit extends Operand
 }
 class Gate extends Operand
 {
-  constructor(nm) {
+  constructor(nm, sf) {
+    let t1;
     super(Operand.GATE);
     this._name = nm;
+    this._suffix = '';
+    this._angles = [];
+    this._measure = false;
+    if (null != sf)
+    {
+      if (typeof sf !== 'object')
+        throw new Error('gate ' + nm + ' is unknown');
+      if (null !== sf[0])
+        this._angles = sf[0];
+      if (null !== sf[1])
+        this._suffix = sf[1];
+    }
+    if (nm === Operand.MGATE)
+    {
+      this._measure = true;
+      if (null != sf)
+      {
+        t1 = parseInt(sf);
+        if (t1 < 1 || t1 > 9)
+          throw new Error('gate ' + nm + sf + ' is unknown');
+      }
+    }
+    this.opcode = this.opCode();
     try
     {
-      QDeskInterpret.single.analyze_opcode(this._name);
+      QDeskInterpret.single.analyze_opcode(this);
     }
     catch (e)
     {
@@ -641,20 +638,109 @@ class Gate extends Operand
       throw e;
     }
   }
+  measure(gat) {
+    function validMeasureStep(opc) {
+      let ix;
+      ix = 0;
+      while (ix < opc.length)
+      {
+        if (opc[ix] !== Operand.UNGATE)
+          return false;
+        ix += 1;
+      }
+      return true;
+    }
+    if (this._measure && gat._measure)
+      return;
+    if (this._measure)
+    {
+      if (!validMeasureStep(gat.opcode))
+        throw new Error(gat.opcode + ' gate not valid in measure step');
+    }
+    else
+    {
+      if (!validMeasureStep(this.opcode))
+        throw new Error(this.opcode + ' gate not valid in measure step');
+      this._measure = true;
+    }
+  }
   combine(gat) {
-    let rgt, op;
+    let rgt, op, opc;
     if (null == gat)
       return;
-    rgt = QDeskInterpret.single.inst_set[gat.name];
-    op = QDeskInterpret.single.inst_set[this._name].tensorprod(rgt);
-    this._name += ',' + gat.name;
-    QDeskInterpret.single.inst_set[this._name] = op;
+    opc = this.opcode + gat.opcode;
+    if (this._measure || gat._measure)
+    {
+      this.measure(gat);
+      this.opcode = opc;
+      return;
+    }
+    if (undefined !== QDeskInterpret.single.inst_set[opc])
+    {
+      this.opcode = opc;
+      return;
+    }
+    rgt = QDeskInterpret.single.inst_set[gat.opcode];
+    op = QDeskInterpret.single.inst_set[this.opcode].tensorprod(rgt);
+    this.opcode = opc;
+    QDeskInterpret.single.inst_set[opc] = op;
+  }
+  finish() {
+    let op, str;
+    // a circuit step is complete
+    if (this._measure)
+    {
+      str = this.opcode.replace(new RegExp(Operand.UNGATE, 'g'), '0');
+      str = str.replace(new RegExp(Operand.MGATE, 'g'), '1');
+      op = QDeskInterpret.single.Quantum.measure.bind(null, str);
+      QDeskInterpret.single.inst_set[this.opcode] = op;
+    }
   }
   get name() {
     return this._name;
   }
+  set name(nm) {
+    this._name = nm;
+  }
+  getSuffix() {
+    return this._suffix;
+  }
+  addSuffix(sf) {
+    this._suffix += sf;
+  }
+  getAngles() {
+    return this._angles;
+  }
+  addAngles(an) {
+    this._angles.concat(an);
+  }
+  opCode() {
+    let str, ix;
+    str = this._name;
+    if (0 !== this._angles.length)
+    {
+      str += '(';
+      for (ix = 0; ix < this._angles.length; ++ix)
+      {
+        if (0 !== ix)
+          str += ',';
+        str += this._angles[ix];
+      }
+      str += ')';
+    }
+    if (0 !== this._suffix.length)
+    {
+      if (str === Operand.MGATE)
+      {
+        ix = parseInt(this._suffix);
+        return Operand.MGATE.repeat(ix);
+      }
+      str += this._suffix;
+    }
+    return str;
+  }
   toString() {
-    return ':' + this._name;
+    return ':' + this.opCode();
   }
 }
 class NamedGate extends Operand

@@ -1,3 +1,25 @@
+function Term()
+{
+}
+Term.none = 0;
+Term.empty = Term.none + 1;
+Term.eol = Term.empty + 1;
+Term.none = Term.eol + 1;
+Term.eol = Term.none + 1;
+Term.ident = Term.eol + 1;
+Term.colon = Term.ident + 1;
+Term.divide = Term.colon + 1;
+Term.lparen = Term.divide + 1;
+Term.rparen = Term.lparen + 1;
+Term.gate = Term.rparen + 1;
+Term.integer = Term.gate + 1;
+Term.comma = Term.integer + 1;
+Term.bar = Term.comma + 1;
+Term.great = Term.bar + 1;
+Term.complex = Term.great + 1;
+Term.real = Term.complex + 1;
+Term.plus = Term.real + 1;
+Term.minus = Term.plus + 1;
 class SynErr extends Error
 {
   constructor(msg, lex) {
@@ -115,20 +137,26 @@ _stmt()
     return _rt;
   }
   _tk = this.lex.next_token();
-  if (this.sym['integer'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['complex'] === _tk.symbol || this.sym['minus'] === _tk.symbol || this.sym['divide'] === _tk.symbol || this.sym['bar'] === _tk.symbol || this.sym['lparen'] === _tk.symbol)
-  {
-    this.lex.pushBack(_tk);
-    _rt = this._circuit();
-    //d-codepoint 1
-  }
-  else if (this.sym['ident'] === _tk.symbol)
+  if (this.sym['ident'] === _tk.symbol)
   {
     _rt = this._gate_sequence();
-    //f-codepoint 2
+    //f-codepoint 1
     _rt = new this.exe.NamedGate(_tk.token, _rt);
   }
+  else if (this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['divide'] === _tk.symbol || this.sym['lparen'] === _tk.symbol || this.sym['integer'] === _tk.symbol || this.sym['bar'] === _tk.symbol || this.sym['complex'] === _tk.symbol || this.sym['real'] === _tk.symbol || this.sym['minus'] === _tk.symbol)
+  {
+    this.lex.pushBack(_tk);
+    _rt = this._initial_value();
+    //d-codepoint 2
+    _sv = _rt;
+    _rt = this._gate_sequence();
+    //f-codepoint 3
+    if (null == _sv)
+      return _rt;
+    _rt = this._append(_sv, _rt);
+  }
   else
-    throw new SynErr("expected [integer, :, complex, -, ident, /, |, (], not " + _tk, this.lex);
+    throw new SynErr("expected [integer, complex, /, :, ident, (, real, |, -], not " + _tk, this.lex);
   return _rt;
 }
 _stmt_list()
@@ -159,26 +187,6 @@ _stmt_list()
     throw new SynErr("expected [eol], not " + _tk, this.lex);
   return _rt;
 }
-_circuit()
-{
-  let _tk, _sv, _sq, _rt = null;
-  _tk = this.lex.next_token();
-  this.lex.pushBack(_tk);
-  if (this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol)
-  {
-    //a0-codepoint 0
-    return _rt;
-  }
-  _rt = this._initial_value();
-  //e-codepoint 1
-  _sv = _rt;
-  _rt = this._gate_sequence();
-  //f-codepoint 2
-  if (null == _sv)
-    return _rt;
-  _rt = this._append(_sv, _rt);
-  return _rt;
-}
 _gate_sequence()
 {
   let _tk, _sv, _sq, _rt = null;
@@ -202,24 +210,26 @@ _initial_value()
   let _tk, _sv, _sq, _rt = null;
   _tk = this.lex.next_token();
   this.lex.pushBack(_tk);
-  if (this.sym['none'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['divide'] === _tk.symbol)
+  if (this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['colon'] === _tk.symbol)
   {
     //a0-codepoint 0
     return _rt;
   }
   _tk = this.lex.next_token();
-  if (this.sym['integer'] === _tk.symbol || this.sym['complex'] === _tk.symbol || this.sym['minus'] === _tk.symbol || this.sym['bar'] === _tk.symbol)
+  if (this.sym['integer'] === _tk.symbol || this.sym['complex'] === _tk.symbol || this.sym['real'] === _tk.symbol || this.sym['bar'] === _tk.symbol || this.sym['minus'] === _tk.symbol)
   {
     this.lex.pushBack(_tk);
     _rt = this._q_state();
     //d-codepoint 1
   }
-  else if (this.sym['lparen'] === _tk.symbol)
+  else if (this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['divide'] === _tk.symbol || this.sym['lparen'] === _tk.symbol)
   {
     this.lex.pushBack(_tk);
     _rt = this._q_state_list();
     //d-codepoint 2
   }
+  else
+    throw new SynErr("expected [integer, complex, (, real, |, -], not " + _tk, this.lex);
   return _rt;
 }
 _q_state()
@@ -245,7 +255,7 @@ _q_state_list()
   let _tk, _sv, _sq, _rt = null;
   _tk = this.lex.next_token();
   this.lex.pushBack(_tk);
-  if (this.sym['none'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['divide'] === _tk.symbol)
+  if (this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['colon'] === _tk.symbol)
   {
     //a0-codepoint 0
     return _rt;
@@ -274,7 +284,7 @@ _g_seq_tail()
   let _tk, _sv, _sq, _rt = null;
   _tk = this.lex.next_token();
   this.lex.pushBack(_tk);
-  if (this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['divide'] === _tk.symbol)
+  if (this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol)
   {
     //a0-codepoint 0
     return _rt;
@@ -282,8 +292,9 @@ _g_seq_tail()
   _tk = this.lex.next_token();
   if (this.sym['colon'] === _tk.symbol)
   {
-    _rt = this._gate();
+    _rt = this._gates();
     //g-codepoint 1
+    _rt.finish()
     _sv = _rt;
     _rt = this._g_seq_tail();
     //f-codepoint 2
@@ -310,11 +321,9 @@ _g_factor()
     _rt = this._unop();
     //g-codepoint 1
     _sv = _rt;
-    _tk = this.lex.next_token();
-    if (this.sym['complex'] !== _tk.symbol)
-      throw new SynErr("expected complex, not " + _tk, this.lex);
-    //c0-codepoint 2
-    _rt = new this.exe.GateFactor(_tk.token);
+    _rt = this._Complex();
+    //f-codepoint 2
+    _rt = new this.exe.GateFactor(_rt.token);
     if (null != _sv)
       _rt.negate();
   }
@@ -322,17 +331,30 @@ _g_factor()
     throw new SynErr("expected [/], not " + _tk, this.lex);
   return _rt;
 }
-_gate()
+_gates()
 {
   let _tk, _sv, _sq, _rt = null;
-  //a1-codepoint 0
-  _rt = this._sub_gate();
-  //e-codepoint 1
-  _sv = _rt;
-  _rt = this._gates();
-  //f-codepoint 2
-  _sv.combine(_rt);
-  _rt = _sv;
+  _tk = this.lex.next_token();
+  this.lex.pushBack(_tk);
+  if (this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['colon'] === _tk.symbol)
+  {
+    //a0-codepoint 0
+    return _rt;
+  }
+  _tk = this.lex.next_token();
+  if (this.sym['gate'] === _tk.symbol || this.sym['ident'] === _tk.symbol)
+  {
+    this.lex.pushBack(_tk);
+    _rt = this._full_gate();
+    //d-codepoint 1
+    _sv = _rt;
+    _rt = this._gates();
+    //f-codepoint 2
+    _sv.combine(_rt);
+    _rt = _sv;
+  }
+  else
+    throw new SynErr("expected [gate, ident], not " + _tk, this.lex);
   return _rt;
 }
 _unop()
@@ -340,7 +362,7 @@ _unop()
   let _tk, _sv, _sq, _rt = null;
   _tk = this.lex.next_token();
   this.lex.pushBack(_tk);
-  if (this.sym['integer'] === _tk.symbol || this.sym['complex'] === _tk.symbol || this.sym['bar'] === _tk.symbol)
+  if (this.sym['integer'] === _tk.symbol || this.sym['complex'] === _tk.symbol || this.sym['real'] === _tk.symbol || this.sym['bar'] === _tk.symbol)
   {
     //a0-codepoint 0
     return _rt;
@@ -349,8 +371,31 @@ _unop()
   if (this.sym['minus'] === _tk.symbol)
   {
     //b-codepoint 1
-    _rt = 1.0;
+    _rt = true;
   }
+  else
+    throw new SynErr("expected [-], not " + _tk, this.lex);
+  return _rt;
+}
+_Complex()
+{
+  let _tk, _sv, _sq, _rt = null;
+  //a1-codepoint 0
+  _tk = this.lex.next_token();
+  if (this.sym['complex'] === _tk.symbol)
+  {
+    //b-codepoint 1
+    _rt = _tk;
+  }
+  else if (this.sym['integer'] === _tk.symbol || this.sym['real'] === _tk.symbol)
+  {
+    this.lex.pushBack(_tk);
+    _rt = this._Real();
+    //d-codepoint 2
+    _rt = _tk;
+  }
+  else
+    throw new SynErr("expected [integer, complex, real], not " + _tk, this.lex);
   return _rt;
 }
 _v_comp()
@@ -370,14 +415,14 @@ _p_state_tail()
   let _tk, _sv, _sq, _rt = null;
   _tk = this.lex.next_token();
   this.lex.pushBack(_tk);
-  if (this.sym['none'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['rparen'] === _tk.symbol || this.sym['divide'] === _tk.symbol)
+  if (this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['rparen'] === _tk.symbol)
   {
     //a0-codepoint 0
     _rt = [];
     return _rt;
   }
   _tk = this.lex.next_token();
-  if (this.sym['minus'] === _tk.symbol || this.sym['plus'] === _tk.symbol)
+  if (this.sym['plus'] === _tk.symbol || this.sym['minus'] === _tk.symbol)
   {
     this.lex.pushBack(_tk);
     _rt = this._addop();
@@ -393,7 +438,7 @@ _p_state_tail()
     _rt.unshift(_sv);
   }
   else
-    throw new SynErr("expected [-, +], not " + _tk, this.lex);
+    throw new SynErr("expected [+, -], not " + _tk, this.lex);
   return _rt;
 }
 _addop()
@@ -411,40 +456,145 @@ _addop()
     //b-codepoint 2
     _rt = -1.0;
   }
+  else
+    throw new SynErr("expected [+, -], not " + _tk, this.lex);
   return _rt;
 }
-_sub_gate()
+_full_gate()
 {
   let _tk, _sv, _sq, _rt = null;
   //a1-codepoint 0
   _tk = this.lex.next_token();
-  if (this.sym['ident'] === _tk.symbol)
+  if (this.sym['gate'] === _tk.symbol)
   {
-    //b-codepoint 1
-    _rt = new this.exe.Gate(_tk.token);
+    _rt = this._gate_suffix();
+    //f-codepoint 1
+    _rt = new this.exe.Gate(_tk.token, _rt);
   }
+  else if (this.sym['ident'] === _tk.symbol)
+  {
+    //b-codepoint 2
+    _rt = new this.exe.Gate(_tk.token, null);
+  }
+  else
+    throw new SynErr("expected [gate, ident], not " + _tk, this.lex);
   return _rt;
 }
-_gates()
+_gate_suffix()
 {
   let _tk, _sv, _sq, _rt = null;
   _tk = this.lex.next_token();
   this.lex.pushBack(_tk);
-  if (this.sym['none'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['divide'] === _tk.symbol)
+  if (this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['gate'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['ident'] === _tk.symbol)
+  {
+    //a0-codepoint 0
+    return _rt;
+  }
+  _rt = this._gate_angle();
+  //e-codepoint 1
+  _sv = _rt;  // angle if any
+  _rt = this._gate_repl();
+  //f-codepoint 2
+  _rt = [_sv, _rt];
+  return _rt;
+}
+_gate_angle()
+{
+  let _tk, _sv, _sq, _rt = null;
+  _tk = this.lex.next_token();
+  this.lex.pushBack(_tk);
+  if (this.sym['integer'] === _tk.symbol || this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['gate'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['ident'] === _tk.symbol)
   {
     //a0-codepoint 0
     return _rt;
   }
   _tk = this.lex.next_token();
-  if (this.sym['comma'] === _tk.symbol)
+  if (this.sym['lparen'] === _tk.symbol)
   {
-    _rt = this._sub_gate();
+    _rt = this._unop();
     //g-codepoint 1
     _sv = _rt;
-    _rt = this._gates();
-    //f-codepoint 2
-    _sv.combine(_rt);
-    _rt = _sv;
+    _rt = this._Real();
+    //g-codepoint 2
+    if (null != _sv)
+      _rt *= -1.0;
+    _sv = [_rt];
+    _rt = this._reals();
+    //g-codepoint 3
+    _rt = _sv.concat(_rt);
+    _tk = this.lex.next_token();
+    if (this.sym['rparen'] !== _tk.symbol)
+      throw new SynErr("expected ), not " + _tk, this.lex);
+    //c0-codepoint 4
+  }
+  else
+    throw new SynErr("expected [(], not " + _tk, this.lex);
+  return _rt;
+}
+_gate_repl()
+{
+  let _tk, _sv, _sq, _rt = null;
+  _tk = this.lex.next_token();
+  this.lex.pushBack(_tk);
+  if (this.sym['divide'] === _tk.symbol || this.sym['none'] === _tk.symbol || this.sym['eol'] === _tk.symbol || this.sym['gate'] === _tk.symbol || this.sym['colon'] === _tk.symbol || this.sym['ident'] === _tk.symbol)
+  {
+    //a0-codepoint 0
+    return _rt;
+  }
+  _tk = this.lex.next_token();
+  if (this.sym['integer'] === _tk.symbol)
+  {
+    //b-codepoint 1
+    _rt = _tk.token;
+  }
+  else
+    throw new SynErr("expected [integer], not " + _tk, this.lex);
+  return _rt;
+}
+_Real()
+{
+  let _tk, _sv, _sq, _rt = null;
+  //a1-codepoint 0
+  _tk = this.lex.next_token();
+  if (this.sym['real'] === _tk.symbol)
+  {
+    //b-codepoint 1
+    _rt = parseFloat(_tk.token);
+  }
+  else if (this.sym['integer'] === _tk.symbol)
+  {
+    //b-codepoint 2
+    _rt = parseFloat(_tk.token);
+  }
+  else
+    throw new SynErr("expected [integer, real], not " + _tk, this.lex);
+  return _rt;
+}
+_reals()
+{
+  let _tk, _sv, _sq, _rt = null;
+  _tk = this.lex.next_token();
+  this.lex.pushBack(_tk);
+  if (this.sym['rparen'] === _tk.symbol)
+  {
+    //a0-codepoint 0
+    _rt = [];
+    return _rt;
+  }
+  _tk = this.lex.next_token();
+  if (this.sym['comma'] === _tk.symbol)
+  {
+    _rt = this._unop();
+    //g-codepoint 1
+    _sv = _rt;
+    _rt = this._Real();
+    //g-codepoint 2
+    if (null != _sv)
+      _rt *= -1.0;
+    _sv = [_rt];
+    _rt = this._reals();
+    //f-codepoint 3
+    _rt = _sv.concat(_rt);
   }
   else
     throw new SynErr("expected [,], not " + _tk, this.lex);
@@ -462,16 +612,15 @@ _coeff()
     return _rt;
   }
   _tk = this.lex.next_token();
-  if (this.sym['complex'] === _tk.symbol)
+  if (this.sym['integer'] === _tk.symbol || this.sym['complex'] === _tk.symbol || this.sym['real'] === _tk.symbol)
   {
-    //b-codepoint 1
+    this.lex.pushBack(_tk);
+    _rt = this._Complex();
+    //d-codepoint 1
     _rt = _tk.token;
   }
-  else if (this.sym['integer'] === _tk.symbol)
-  {
-    //b-codepoint 2
-    _rt = _tk.token;
-  }
+  else
+    throw new SynErr("expected [integer, complex, real], not " + _tk, this.lex);
   return _rt;
 }
 _ket()
@@ -492,8 +641,6 @@ _ket()
     //c0-codepoint 2
     _rt = _sv;
   }
-  else
-    throw new SynErr("expected [|], not " + _tk, this.lex);
   return _rt;
 }
 }
