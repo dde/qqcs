@@ -826,11 +826,13 @@ QDeskLexer.G2 = 2;
 QDeskLexer.G12 = 3;
 QDeskLexer.gateName1 = {
   'C': QDeskLexer.G12,
-  // 'D': null,
+  'D': QDeskLexer.G1,
   'F': QDeskLexer.G2,
   'H': QDeskLexer.G1,
   'I': QDeskLexer.G12,
+  'K': QDeskLexer.G2,
   'M': QDeskLexer.G1,
+  'Q': QDeskLexer.G2,
   'R': QDeskLexer.G2,
   'S': QDeskLexer.G12,
   'T': QDeskLexer.G12,
@@ -844,7 +846,11 @@ QDeskLexer.gateName2 = {
   'Cr': true,
   'Cx': true,
   'Fr': true,
+  'Kp': true,
   'Im': true,
+  'Qa': true,
+  'Qf': true,
+  'Rp': true,
   'Rx': true,
   'Ry': true,
   'Rz': true,
@@ -852,6 +858,7 @@ QDeskLexer.gateName2 = {
   'Sw': true,
   'Ta': true,
   'Tf': true,
+  'Tp': true,
 };
 // function test() {
 //   let tfil, ix;
