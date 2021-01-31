@@ -196,64 +196,6 @@ function SysinReader(callback, intro) {
       // process.stdout.write(typeof chunk);
     }
   });
-  /*
-  process.stdin.on('readable', () => {
-    let stmt, tkn, src, prv, chunk;
-    src = '';
-    prv = '\0';
-    while (prv !== '\n' && (chunk = process.stdin.read()) !== null)
-    {
-      // data may include ending newline char
-      //process.stdout.write(`data: ${chunk}`);
-      process.stdout.write(chunk);
-      src += chunk;
-      prv = chunk;
-    }
-    // console.log('trace input:"%s"', src);
-    // if (0 === src.length || (1 === src.length && src === '\n'))
-    //   return;
-    if (0 === src.length)
-      return;
-    switch (escapeCheck(src))
-    {
-    case PRV:
-      src = history[history.length - 1]
-      break;
-    default:
-      break;
-    }
-    try
-    {
-      //lex.setSourceLine(src);
-      if (history.length > 25)
-        history.shift();
-      history.push[src];
-      //stmt = compile._stmt();
-      // if (null == stmt)
-      // {
-      //   if (null == src.match(/^ *(#.*)?\n$/))
-      //     console.log('unrecognized statement');
-      //   prompt();
-      //   return;
-      // }
-      //interp.exec(stmt);
-    }
-    catch (e)
-    {
-      console.log('error:%s', e.message);
-      prompt();
-      return;
-    }
-    // tkn = lex.next_token();
-    // if (Symbol['none'] === tkn.symbol)
-    //   return;
-    // if (Symbol['eol'] !== tkn.symbol)
-    // {
-    //   console.log('logic error (line end) symbol %s', tkn.toString());
-    // }
-    prompt();
-    return;
-  });*/
   process.stdin.on('end', () => {
     //process.stdin.setRawMode(false);
     process.stdout.write('Good-bye\n');
