@@ -71,7 +71,8 @@ let cfg = {
   kdisp:false,
   trace:false,
   sparse:false,
-  flags:{k:'kdisp', t:'trace', s:'sparse'}
+  ualt:false,
+  flags:{k:'kdisp', t:'trace', s:'sparse', u:'ualt'}
 };
 let tt, tc, tst, tstout, assert, fai, util;
   cmdArgs(cfg, usage);
@@ -80,7 +81,7 @@ let tt, tc, tst, tstout, assert, fai, util;
     assert = require('assert').strict;
     util = require('util');
     tc = require('./test_cases.js');
-    interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp, test:true, interactive:true});
+    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt: cfg.ualt, test:true, interactive:true});
     lex = new ql.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, ql.Symbol, interp);
     fail = 0;
@@ -116,7 +117,7 @@ let tt, tc, tst, tstout, assert, fai, util;
   }
   else
   {
-    interp = new qi.QDeskInterpret({all: cfg.trace, state: cfg.kdisp, interactive:false});
+    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt: cfg.ualt, interactive:false});
     for (ix = 0; ix < cfg.files.length; ++ix)
     {
       tfil = cfg.files[ix];
