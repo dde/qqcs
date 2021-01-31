@@ -3,7 +3,7 @@
  */
 let sp = require('./spmatrix.js');
 let Complex = sp.Complex,
-    // Matrix = cm.CMatrix;
+    // Matrix = sp.CMatrix;
     Matrix = sp.SpMatrix;
 exports.Quantum = Quantum;
 exports.Complex = Complex;
@@ -96,22 +96,23 @@ Quantum.buildCNOT = function (qbits, ctl, tgt)
     throw new Error('buildCNOT argument range error qubits:' + qbits + ', ctl:' + ctl + ', tgt:' + tgt);
   sz = Math.pow(2, qbits);
   gat = new Matrix(sz, sz);
+  // for (ix = 0; ix < sz; ++ix)
+  // {
+  //   for (jx = 0; jx < sz; ++jx)
+  //   {
+  //     gat.sub(ix, jx, Quantum.ZERO);
+  //   }
+  // }
   for (ix = 0; ix < sz; ++ix)
   {
-    for (jx = 0; jx < sz; ++jx)
-    {
-      gat.sub(ix, jx, Quantum.ZERO);
-    }
-  }
-  for (ix = 0; ix < sz; ++ix)
-  {
-    bas = (+ix).toString(2);
+    bas = (ix).toString(2);
     bas = '0'.repeat(qbits - bas.length) + bas;
-    bas = bas.split('');
     if (bas[ctl] === '1')
     {
+      bas = bas.split('');
       bas[tgt] = (bas[tgt] === '0') ? '1' : '0';
       jx = parseInt(bas.join(''), 2);
+      // jx = parseInt(bas, 2);
     }
     else
     {
@@ -127,21 +128,20 @@ Quantum.buildToffoli = function (qbits, ctl1, ctl2, tgt) {
     throw new Error('argument range error - 3 <= qubits <= 8, 0 <= lines < qubits');
   sz = Math.pow(2, qbits);
   gat = new Matrix(sz, sz);
-  for (ix = 0; ix < sz; ++ix)
-  {
-    for (jx = 0; jx < sz; ++jx)
-    {
-      gat.sub(ix, jx, Quantum.ZERO);
-    }
-  }
+  // for (ix = 0; ix < sz; ++ix)
+  // {
+  //   for (jx = 0; jx < sz; ++jx)
+  //   {
+  //     gat.sub(ix, jx, Quantum.ZERO);
+  //   }
+  // }
   for (ix = 0; ix < sz; ++ix)
   {
     bas = (+ix).toString(2);
-    while (bas.length < qbits)
-      bas = '0' + bas;
-    bas = bas.split('');
+    bas = '0'.repeat(qbits - bas.length) + bas;
     if (bas[ctl1] === '1' && bas[ctl2] === '1')
     {
+      bas = bas.split('');
       bas[tgt] = (bas[tgt] === '0') ? '1' : '0';
       jx = parseInt(bas.join(''), 2);
     }
@@ -212,7 +212,7 @@ Quantum.buildTensoredGate = function (g, n) {
 Quantum.buildMeanInversion = function (qbits) {
   let nn, ix, jx, mat, cc, m1;
   if (qbits < 1 || qbits > Quantum.qubits)
-    throw new Error('argument range error 1 <= qubits <= 8');
+    throw new Error('argument range error 1 <= qubits <= ' + Quantum.qubits);
   nn = Math.pow(2, qbits);
   cc = new Complex(2 / nn);
   m1 = cc.sum(new Complex(-1));
@@ -229,6 +229,28 @@ Quantum.buildMeanInversion = function (qbits) {
   }
   return mat;
 };
+Quantum.buildQFT = function (qbits) {
+  let j, k, sz, frst, qf, angle, incr, rc;
+  if (qbits < 1 || qbits > Quantum.qubits)
+    throw new Error('argument range error 1 <= qubits <= ' + Quantum.qubits);
+  sz = Math.pow(2, qbits);
+  rc = new Complex(1 / Math.sqrt(sz));
+  frst = (2 * Math.PI) / sz;
+  qf = new Matrix(sz, sz);
+  incr = 0.0;
+  for (j = 0; j < sz; j += 1)
+  {
+    angle = 0.0;
+    for (k = 0; k < sz; k += 1)
+    {
+      qf.sub(j, k, new Complex(1).iexp(angle));
+      angle += incr;
+    }
+    incr += frst;
+  }
+  qf.scprodeq(rc);
+  return qf;
+};
 /**
  * Build an n qubit basis vector
  * @param qbits - the number of qubits represented by the basis vector
@@ -238,27 +260,39 @@ Quantum.buildBasis = function(qbits, qv) {
   let qb, ix, b;
   if (qbits < 1 || qbits > Quantum.qubits)
     throw new Error('argument range error 1 <= qubits <=' + Quantum.qubits);
-  b = (qv).toString(2);
-  while (b.length < qbits)
-  {
-    b = '0' + b;
-  }
-  ix = b.length - 1;
-  if ('1' === b[ix])
-    qb = Quantum.q1;
-  else
-    qb = Quantum.q0;
-  ix -= 1;
-  while (ix >= 0)
-  {
-    if ('1' === b[ix])
-      qb = Quantum.q1.tensorprod(qb);
-    else
-      qb = Quantum.q0.tensorprod(qb);
-    ix -= 1;
-  }
+  ix = Math.pow(2, qbits);
+  if (qv < 0 || qv >= ix)
+    throw new Error('argument range error 0 <= value < 2^' + qbits);
+  qb = new Matrix(ix, 1);
+  qb.sub(qv, 0, Quantum.ONE);
   return qb;
 };
+// Quantum.buildBasis = function(qbits, qv) {
+//   let qb, ix, b;
+//   if (qbits < 1 || qbits > Quantum.qubits)
+//     throw new Error('argument range error 1 <= qubits <=' + Quantum.qubits);
+//   b = (qv).toString(2);
+//   b = '0'.repeat(qbits - b.length) + b;
+//   // while (b.length < qbits)
+//   // {
+//   //   b = '0' + b;
+//   // }
+//   ix = b.length - 1;
+//   if ('1' === b[ix])
+//     qb = Quantum.q1;
+//   else
+//     qb = Quantum.q0;
+//   ix -= 1;
+//   while (ix >= 0)
+//   {
+//     if ('1' === b[ix])
+//       qb = Quantum.q1.tensorprod(qb);
+//     else
+//       qb = Quantum.q0.tensorprod(qb);
+//     ix -= 1;
+//   }
+//   return qb;
+// };
 /**
  * Build a 2x2 global phase shift matrix from Rieffel and Polak
  * @param ph the requested phase
@@ -297,7 +331,7 @@ Quantum.buildPhaseRotation = function (ph) {
  * @param lambda angle p
  * @returns {Matrix}
  */
-Quantum.buildU = function (theta, phi, lambda) {
+Quantum.buildUq = function (theta, phi, lambda) {
   let plsum = (phi + lambda) / 2,
       pldif = (phi - lambda) / 2,
       cost2 = Math.cos(theta / 2),
@@ -311,16 +345,23 @@ Quantum.buildU = function (theta, phi, lambda) {
  * U(pi/2,phi,lambda) = U(phi,lambda)
  * U(0,0,lambda) = U(lambda)
  * @param theta angle parameter 1
- * @param phi angle parameter 2
+ * @param phe angle parameter 2
  * @param lambda angle p
  * @returns {Matrix}
  */
-Quantum.buildUe = function (theta, phi, lambda) {
+Quantum.buildUe = function (theta, phe, lambda) {
   let cost2 = Math.cos(theta / 2),
       sint2 = Math.sin(theta / 2);
-  return new Matrix([cost2, Complex.iexp(lambda).scprodeq(-sint2)],
-      [Complex.iexp(phi).scprodeq(sint2), Complex.iexp(lambda+phi).scprodeq(cost2)]);
+  return new Matrix([Complex.iexp(0).scprodeq(cost2), Complex.iexp(lambda).scprodeq(-sint2)],
+      [Complex.iexp(phe).scprodeq(sint2), Complex.iexp(lambda+phe).scprodeq(cost2)]);
 };
+Quantum.buildU = Quantum.buildUq;  // the generic build from unitary function, optionable
+Quantum.setUMatrix = function (sw) { // sw == true, use alternate unitary
+  if (sw)
+    Quantum.buildU = Quantum.buildUe;
+  else
+    Quantum.buildU = Quantum.buildUq;
+}
 /**
  * Build a 2x2 z-axis rotation matrix from QASM - Rz is U(0,0,ph)
  * @param ph the requested phase
@@ -364,19 +405,17 @@ Quantum.buildControlled = function (qbits, ctl, tgt, gat) {
   let ix, jx, spn, q0, q1, n, ket, cg, ll, qs;
   if (!(gat instanceof Matrix) || 2 !== gat.rows() || 2 !== gat.columns())
     throw new Error('gate to be controlled must be 2x2 Matrix');
-  spn = Math.abs(ctl - tgt) + 1;
-  q0 = gat.prod(this.buildBasis(1, 0));
-  q1 = gat.prod(this.buildBasis(1, 1));
-  n = Math.pow(2, spn);
+  q0 = gat.prod(Quantum.q0);
+  q1 = gat.prod(Quantum.q1);
+  n = Math.pow(2, qbits);
   cg = new Matrix(n, n);
   for (ix = 0; ix < n; ++ix)
   {
     ket = Number(ix).toString(2);
-    while (ket.length < spn)
-    {
-      ket = '0' + ket;
-    }
-    for (jx = 0; jx < spn; ++jx)
+    ket = '0'.repeat(qbits - ket.length) + ket;
+    qs = new Matrix(1, 1);
+    qs.sub(0, 0, Quantum.ONE);
+    for (jx = 0; jx < qbits; ++jx)
     {
       if (jx === tgt && '1' === ket[ctl])
       {
@@ -386,14 +425,7 @@ Quantum.buildControlled = function (qbits, ctl, tgt, gat) {
       {
         ll = ('1' === ket[jx]) ? Quantum.q1 : Quantum.q0;
       }
-      if (0 === jx)
-      {
-        qs = ll.clone();
-      }
-      else
-      {
-        qs = qs.tensorprod(ll);
-      }
+      qs = qs.tensorprod(ll);
     }
     for (jx = 0; jx < n; ++jx)
     {
@@ -422,6 +454,56 @@ Quantum.buildSwap = function (qbits, sw1, sw2) {
     q0 = '0'.repeat(qbits - q0.length) + q0;
     q1 = q0.substring(0, sw1) + q0[sw2] + q0.substring(sw1 + 1, sw2) + q0[sw1] + q0.substring(sw2 + 1);
     qs = this.buildBasis(qbits, parseInt(q1, 2));
+    for (jx = 0; jx < n; ++jx)
+    {
+      cg.sub(jx, ix, qs.sub(jx, 0));
+    }
+  }
+  return cg;
+};
+Quantum.buildFred = function (qbits, ctl, sw1, sw2) {
+  let ix, jx, q0, q1, q2, q3, n, cg, qs, sw;
+  if (qbits < 1 || qbits > Quantum.qubits)
+    throw new Error('argument range error 1 <= qubits <=' + Quantum.qubits);
+  if (sw1 < 0 || sw2 < 0 || ctl < 0 || sw1 >= qbits || sw2 >= qbits || ctl >= qbits ||
+      sw1 === sw2 || ctl === sw1 || ctl === sw2)
+    throw new Error('swap and control lines must be unique and within qubits range');
+  if (sw2 < sw1)
+  {
+    ix = sw1;
+    sw1 = sw2;
+    sw2 = ix;
+  }
+  // if (ctl >= sw1 && ctl <= sw2)
+  //   throw new Error('control cannot be a swap input');
+  sw = Quantum.buildSwap(Math.max(0, sw2 - sw1) + 1, 0, sw2 - sw1);
+  n = Math.pow(2, qbits);
+  cg = new Matrix(n, n);
+  for (ix = 0; ix < n; ++ix)
+  {
+    q0 = Number(ix).toString(2);
+    q0 = '0'.repeat(qbits - q0.length) + q0;
+    qs = new Matrix(1, 1);
+    qs.sub(0, 0, Quantum.ONE);
+    if (sw1 > 0)
+    {
+      q1 = this.buildBasis(sw1, parseInt(q0.substring(0, sw1), 2));
+      qs = qs.tensorprod(q1);
+    }
+    q2 = this.buildBasis(sw2 - sw1 + 1, parseInt(q0.substring(sw1, sw2 + 1), 2));
+    if ('1' === q0[ctl])
+    {
+      qs = qs.tensorprod(sw.prod(q2));
+    }
+    else
+    {
+      qs = qs.tensorprod(q2);
+    }
+    if (sw2 < ctl)
+    {
+      q3 = this.buildBasis(ctl - sw2, parseInt(q0.substring(ctl, ctl + 1), 2));
+      qs = qs.tensorprod(q3);
+    }
     for (jx = 0; jx < n; ++jx)
     {
       cg.sub(jx, ix, qs.sub(jx, 0));
@@ -496,10 +578,11 @@ Quantum.measureX = function (mask, q) {
     for (ix = 0; ix < sz; ++ix)
     {
       str = (ix).toString(2);
-      while (str.length < qbs)
-      {
-        str = '0' + str;
-      }
+      str = '0'.repeat(qbs - str.length) + str;
+      // while (str.length < qbs)
+      // {
+      //   str = '0' + str;
+      // }
       bin.push(str);
     }
     return bin;
@@ -613,10 +696,11 @@ Quantum.measure = function(mask, q) {
     for (ix = 0; ix < sz; ++ix)
     {
       str = (ix).toString(2);
-      while (str.length < qbs)
-      {
-        str = '0' + str;
-      }
+      str = '0'.repeat(qbs - str.length) + str;
+      // while (str.length < qbs)
+      // {
+      //   str = '0' + str;
+      // }
       bin.push(str);
     }
     return bin;
