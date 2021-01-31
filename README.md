@@ -160,7 +160,7 @@ Lines within the span that are not control or target lines are ungated by implic
 With a absolute suffix, the control and target digits indicate the actual lines of the circuit.  No leading
 \_'s are needed for positioning.  Trailing \_'s may still be needed.
 
-Either absolute or relative notation may be uaed.
+Either absolute or relative notation may be used.
 
 Any single qubit gate can be followed by a control suffix to make it a controlled gate.
 
