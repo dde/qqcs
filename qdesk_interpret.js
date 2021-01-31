@@ -8,12 +8,12 @@ class LogicErr extends Error
     super(msg);
   }
 }
-class GatErr extends Error
-{
-  constructor(msg, lex) {
-    super(msg + ' at line ' + String(lex.linenumber) + ':' + String(lex.position));
-  }
-}
+// class GatErr extends Error
+// {
+//   constructor(msg, lex) {
+//     super(msg + ' at line ' + String(lex.linenumber) + ':' + String(lex.position));
+//   }
+// }
 class QDeskInterpret
 {
   constructor(cfg) {
@@ -36,7 +36,7 @@ class QDeskInterpret
     this.Ket = Ket;
     if (undefined === cfg)
     {
-      this.cfg = {trace:false, kdisp:false};
+      this.cfg = {trace:false, kdisp:false, ualt:false};
     }
     else
     {
@@ -48,6 +48,10 @@ class QDeskInterpret
         this.cfg.kdisp = false;
       if (typeof cfg.trace !== 'boolean')
         this.cfg.trace = false;
+      if (typeof cfg.ualt !== 'boolean')
+        this.cfg.ualt = false
+      else
+        this.Quantum.setUMatrix(this.cfg.ualt);
     }
     if (this.cfg.test)
     {
@@ -62,7 +66,7 @@ class QDeskInterpret
       'C': null,
       'Cr': null,
       'Cx': null,
-      // 'D': null,
+      'D': null,
       'Fr':null,
       'H': this.Quantum.hGate,
       'I': this.Quantum.iGate,
@@ -83,7 +87,7 @@ class QDeskInterpret
       'Z': this.Quantum.zGate,
       '_': this.Quantum.iGate,
     };
-    this.inst_set = [];
+    this.inst_set = {};
     this.sym = {};
     this.sym.None = 0;
     this.sym.Eol = this.sym.None + 1;
@@ -94,17 +98,18 @@ class QDeskInterpret
     this.sym.Minus = this.sym.Comma + 1;
     this.sym.Digit = this.sym.Minus + 1;
     this.sym.Decimal = this.sym.Digit + 1;
-    this.lex = {cix:0,
-      cln:0,
-      pbk:null,
-      token:'',
-      symbol:this.sym.None,
-      next_token:this.gate_lexer,
-      pushback:this.push_back};
+    // this.lex = {cix:0,
+    //   cln:0,
+    //   pbk:null,
+    //   token:'',
+    //   symbol:this.sym.None,
+    //   next_token:this.gate_lexer,
+    //   pushback:this.push_back};
   }
   clearFlags() {
     this.cfg.trace = false;
     this.cfg.kdisp = false;
+    this.Quantum.setUMatrix(false);
   }
   setFlags(cfg) {
     if (undefined !== cfg.trace)
@@ -116,22 +121,37 @@ class QDeskInterpret
     let mch = [];
     mch[0] = cmt.indexOf('$trace');
     mch[1] = cmt.indexOf('$kdisp');
-    mch[2] = cmt.indexOf('$none');
+    mch[2] = cmt.indexOf('$ualt');
+    mch[3] = cmt.indexOf('$none');
     if (-1 < mch[0])
-      this.cfg.trace = true;
+    {
+      this.cfg.trace = !this.cfg.trace;
+    }
     if (-1 < mch[1])
-      this.cfg.kdisp = true;
+    {
+      this.cfg.kdisp = !this.cfg.kdisp;
+    }
     if (-1 < mch[2])
+    {
+      this.cfg.ualt = !this.cfg.ualt;
+      this.Quantum.setUMatrix(this.cfg.ualt);
+      this.inst_set = {};  // clear the cache of any previous U() definitions
+    }
+    if (-1 < mch[3])
     {
       this.cfg.trace = false;
       this.cfg.kdisp = false;
+      this.cfg.ualt = false;
+      this.Quantum.setUMatrix(this.cfg.ualt);
+      this.inst_set = {};  // clear the cache of any previous U() definitions
     }
     if (this.cfg.interactive)
     {
-      if (0 === cmt.indexOf('gate'))
+      if (0 <= cmt.indexOf('$gate'))
       {
-        process.stdout.write(':H :X :Y :Z :I :S :T :s :t :Cx :Cr :Cct Swct Tfcct Imq - c control, t target, q qubits\n');
-        process.stdout.write('single qubit gates :H :X :Y :Z :I :S :T :s :t may also have a control suffix\n');
+        process.stdout.write('single qubit gates: _ H X Y Z I S T Sa Ta Rx(r) Ry(r) Rz(r) U(r[,r[,r]]) Kp(r) Rp(r) Tp(r)\n');
+        process.stdout.write('    r - real multiple of pi, gates may have a control suffix\n');
+        process.stdout.write('larger gates: Cx Cr Cct Swct Tfcct Imq Qfq Qaq - c control, t target, q qubits\n');
       }
     }
   }
@@ -167,28 +187,22 @@ class QDeskInterpret
       return op;
     }
     function suffix(ths, sf, op, opc) {
-      let c1, t1;
+      let c1, t1, qb;
       if (sf.length > 0)
       {
-        try
+        if (1 === sf.length)
         {
-          if (1 === sf.length)
-          {
-            op = tpower(sf, op);
-          }
-          else if (2 === sf.length)
-          {
-            c1 = parseInt(sf.charAt(0));
-            t1 = parseInt(sf.charAt(1));
-            op = ths.Quantum.buildControlled(Math.abs(c1 - t1) + 1, c1, t1, op);
-          }
-          else
-            throw new Error('gate ' + opc + ' is unknown');
+          op = tpower(sf, op);
         }
-        catch (e)
+        else if (2 === sf.length)
         {
+          c1 = parseInt(sf.charAt(0));
+          t1 = parseInt(sf.charAt(1));
+          qb = Math.max(c1, t1) + 1;
+          op = ths.Quantum.buildControlled(qb, c1, t1, op);
+        }
+        else
           throw new Error('gate ' + opc + ' is unknown');
-        }
       }
       return op;
     }
@@ -198,6 +212,26 @@ class QDeskInterpret
     bas = gat.name;
     sf = gat.getSuffix();
     ph = gat.getAngles();
+    switch (bas)
+    {
+    case 'Kp':
+    case 'Rp':
+    case 'Tp':
+    case 'Rx':
+    case 'Ry':
+    case 'Rz':
+      if (ph.length !== 1)
+        throw new Error('gate ' + bas + ' requires 1 angular parameter');
+      break;
+    case 'U':
+      if (ph.length < 1 || ph.length > 3)
+        throw new Error('gate ' + bas + ' requires 1, 2, or 3 angular parameters');
+      break;
+    default:
+      if (ph.length !== 0)
+        throw new Error('gate ' + bas + ' does not take an angular parameter');
+      break;
+    }
     switch (bas)
     {
     case 'H':
@@ -237,44 +271,75 @@ class QDeskInterpret
         c1 = 1;
       op = this.Quantum.buildMeanInversion(c1);
       break;
+    case 'Qf':
+    case 'Qa':
+      if (sf.length > 1)
+        throw new Error('opcode ' + opc + ' is unknown');
+      if (1 === sf.length)
+        c1 = parseInt(sf);
+      else
+        c1 = 1;
+      op = this.Quantum.buildQFT(c1);
+      if (bas === 'Qa')
+        op = op.adjoint();
+      break;
     case 'Sw':
       if (2 !== sf.length)
         throw new Error('opcode ' + opc + ' is unknown');
       c1 = parseInt(sf.charAt(0));
       c2 = parseInt(sf.charAt(1));
-      op = this.Quantum.buildSwap(Math.abs(c1 - c2) + 1, c1, c2);
+      t1 = Math.max(c1, c2) + 1;
+      // op = this.Quantum.buildSwap(Math.abs(c1 - c2) + 1, c1, c2);
+      op = this.Quantum.buildSwap(t1, c1, c2);
       break;
+    case 'Fr':
     case 'Tf':
-      if (3 !== sf.length)
-        throw new Error('opcode ' + opc + ' is unknown');
-      c1 = parseInt(sf.charAt(0));
-      c2 = parseInt(sf.charAt(1));
-      t1 = parseInt(sf.charAt(2));
-      op = this.Quantum.buildToffoli(Math.max(c1, c2, t1) - Math.min(c1, c2, t1) + 1, c1, c2, t1);
+      if (0 !== sf.length)
+      {
+        if (3 !== sf.length)
+          throw new Error('opcode ' + opc + ' is unknown');
+        c1 = parseInt(sf.charAt(0));
+        c2 = parseInt(sf.charAt(1));
+        t1 = parseInt(sf.charAt(2));
+      }
+      else
+      {
+        c1 = 0;
+        c2 = 1;
+        t1 = 2;
+      }
+      if ('Tf' === bas)
+        op = this.Quantum.buildToffoli(Math.max(c1, c2, t1) + 1, c1, c2, t1);
+      else
+        op = this.Quantum.buildFred(Math.max(c1, c2, t1) + 1, c1, c2, t1);
       break;
     case 'M':
       return;
+    case 'Kp':
+      op = this.Quantum.buildGlobalPhase(ph[0] * Math.PI);
+      op = suffix(this, sf, op, opc);
+      break;
+    case 'Rp':
+      op = this.Quantum.buildRotation(ph[0] * Math.PI);
+      op = suffix(this, sf, op, opc);
+      break;
+    case 'Tp':
+      op = this.Quantum.buildPhaseRotation(ph[0] * Math.PI);
+      op = suffix(this, sf, op, opc);
+      break;
     case 'Rx':
-      if (ph.length !== 1)
-        throw new Error('gate ' + opc + ' is unknown');
       op = this.Quantum.buildRx(ph[0] * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Ry':
-      if (ph.length !== 1)
-        throw new Error('gate ' + opc + ' is unknown');
       op = this.Quantum.buildRy(ph[0] * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Rz':
-      if (ph.length !== 1)
-        throw new Error('gate ' + opc + ' is unknown');
       op = this.Quantum.buildRz(ph[0] * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'U':
-      if (ph.length < 1 || ph.length > 3)
-        throw new Error('gate ' + opc + ' is unknown');
       if (1 === ph.length)
       {
         op = this.Quantum.buildU(0, 0, ph[0] * Math.PI);
@@ -291,14 +356,15 @@ class QDeskInterpret
       break;
     case '/':
       break;
-    case '0':
-      break;
-        // case 'D':
-        //   c1 = parseInt(opc.charAt(kx + 1));
-        //   if (isNaN(c1))
-        //     c1 = 1;
-        //   op = this.Quantum.buildDGate(c1);
-        //   break;
+    // case '0':
+    //   break;
+    // case 'D':
+    //   if (0 !== sf.length)
+    //     c1 = parseInt(sf);
+    //   else
+    //     c1 = 2;
+    //   op = this.Quantum.buildDGate(c1);
+    //   break;
     default:
       if (undefined === this.inst_set[bas])
         throw new Error(opc + ' unimplemented');
@@ -705,9 +771,11 @@ class Gate extends Operand
   getSuffix() {
     return this._suffix;
   }
-  addSuffix(sf) {
-    this._suffix += sf;
-  }
+  // getQubits() {
+  // }
+  // addSuffix(sf) {
+  //   this._suffix += sf;
+  // }
   getAngles() {
     return this._angles;
   }
@@ -748,7 +816,6 @@ class NamedGate extends Operand
   constructor(nm, gs) {
     super(Operand.NMGATE);
     this._name = nm;
-    this._gate_seq = gs;
     this.next = gs;
   }
   get name() {
