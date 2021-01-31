@@ -7,6 +7,7 @@
     console.log("  i - interactive mode");
     console.log("  t - trace circuit steps");
     console.log("  k - use ket display when circuit initial value is provided");
+    console.log("  u - use alternate unitary matrix definition for unitary gates");
     console.log("  h - or no parameters displays this help");
     console.log("  input-files - zero or more input QDesk statement files");
     process.exit(1);
@@ -124,10 +125,12 @@
     trace: false,
     kdisp: false,
     help: false,
+    ualt: false,
     flags: {
       i: 'interactive',
       t: 'trace',
       k: 'kdisp',
+      u: 'ualt',
       h: 'help'
     }
   };
@@ -136,7 +139,7 @@
     usage();
   if (cfg.interactive || 0 === cfg.files.length)
   {
-    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, interactive:true});
+    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt, interactive:true});
     lex = new qd.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
     tt = require('./qdesk_interactive.js');
@@ -148,7 +151,7 @@
     for (ix = 0; ix < cfg.files.length; ++ix)
     {
       console.log('--- file:%s---', cfg.files[ix])
-      interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp});
+      interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt});
       lex = new qd.QDeskLexer(cfg.files[ix],  interp.getCommentProcessor());
       compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
       // if (cfg.skel)
