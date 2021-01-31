@@ -1,31 +1,17 @@
 # QQCS - Quick Quantum Circuit Simulation
 
-## Notes on Version 1.2.0
 
-Version 1.2.0 introduces several upward incompatibilities in order to expand the set of gates supported and to
-simplify the syntax:
-
-    * Ungated circuit lines are now represented by the underscore (_) character, not the lower case i
-    * The comma syntax for ungated circuit lines between gates has been eliminated.  What used to be specified
-      as :X,I,X can now be specified as :X_X
-    * The S adjoint gate has been renamed from 's' to 'Sa'.  A similiar change has been made for the T adjoint gate. 
-    * In prior versions, factoring at the end of a custom gate assignment was displayed but did not affect the
-      assigned gate matrix.  It now does.
-
-New features in version 1.2.0 include:
-
-    * Rx(𝜃), Ry(𝜃), and Rz(𝜃) rotation gates
-    * U(𝜃,𝜙,λ), general rotation gate (U1, U2, and U3) based on a three parameter general 2x2 unitary matrix 
 
 ## Overview
 
 The student new to Quantum Computing immediately confronts the steep hurdle of the mathematics of complex vector
- spaces needed to understand the basic concepts
+ spaces needed to understand the basic concepts.
 
 There are elaborate systems available to aid quantum computations, but they are embedded in other languages,
- which is just one more thing to learn
+ which is just one more thing to learn.
 
-When working with quantum algorithms expressed as circuits or gate sequences, one wants to know several things that are not immediately available in quantum programming systems.
+When working with quantum algorithms expressed as circuits or gate sequences, one wants to know several things
+that are not immediately available in quantum programming systems.
 
     * A trace of the quantum state after each circuit gate
     * A display of the gate equivalent at any point in the circuit
@@ -35,16 +21,19 @@ When working with quantum algorithms expressed as circuits or gate sequences, on
 QQCS contains all these features.  It is an educational tool for first and second courses in Quantum Computing.
 
 QQCS can also be used by the quantum experimentalist.  It can test the operation of quantum circuits step by step,
-displaying the output of each step as a quantum state, an equivalent gate, or a measure of one or more qubits, and it can
-quickly run through alternatives. 
+displaying the output of each step as a quantum state, an equivalent gate, or a measure of one or more qubits,
+and it can quickly run through alternatives.
+
+Although QQCS is "one more thing to learn", it is designed to be an intuitive character reprentation of a
+quantum circuit, using familiar gate names and quantum notation, drawing on existing concepts so that the
+learning is minimal.
 
 ## Quantum Circuit Simulation
 
-A circuit simulation is not a quantum computer simulation.  It is a mathematical rendering of each step of a quantum
- algorithm that is described by a sequence of gate operations on an initial quantum state.
+A quantum circuit simulation is not a quantum computer simulation.  It is a mathematical rendering of each step
+of a quantum algorithm that is described by a sequence of gate operations on an initial quantum state.
 
-The underlying software system renders the simulation. Quick Quantum Circuit Simulation (QQCS).
-The system allows a student to quickly construct a circuit using a linear notation motivated by the circuits
+The QQCS software renders the simulation. The system allows a student to quickly construct a circuit using a linear notation motivated by the circuits
 themselves, and to acquire the information to analyze an algorithm quickly without the need for tedious calculations.
 
 ## Introduction
@@ -98,18 +87,20 @@ change the numbering of the controls and target.
 <tr><td>H </td><td> Hadamard gate </td><td>C </td><td> general CNOT (used with a 2-digit control suffix) </td></tr>
 <tr><td>I </td><td> Identity gate</td><td>Cx </td><td>CNOT with control qubit q and target qubit q+1</td></tr>
 <tr><td>_ </td><td> ungated lines (implied Identity)</td><td>Cr </td><td>reverse CNOT with control qubit q+1 and target qubit q</td></tr>
-<tr><td>Rx(𝜃)</td><td>Pauli X rotation gate</td><td>Sw</td><td>general Swap (used with a 2-digit control suffix)</td></tr>
-<tr><td>Ry(𝜃)</td><td>Pauli Y rotation gate</td><td>nn</td><td>control suffix for any 1-qubit gate</td></tr>
-<tr><td>Rz(𝜃)</td><td>Pauli Z rotation gate</td><td></td><td></td></tr>
-<tr><td>S </td><td>S gate (π/2 phase gate)</td><td></td><td></td></tr>
-<tr><td>Sa </td><td>S adjoint</td><td></td><td></td></tr>
-<tr><td>T </td><td> π/8 gate (π/4 phase gate)</td><th colspan="2">3-Qubit</th></tr>
-<tr><td>Ta </td><td>T adjoint</td><td>Fr</td><td>general Fredkin gate (used with a 3-digit control suffix)</td></tr>
-<tr><td>U(𝜃,𝜙,λ)</td><td>General one-, two-, or three-parameter rotation gate</td><td>Im</td><td>n-qubit Mean Inversion (used with 1-digit size suffix)</td></tr>
-<tr><td>X </td><td> Pauli X gate </td><td>Tf</td><td>general Toffoli gate (used with a 3-digit control suffix)</td></tr>
-<tr><td>Y </td><td> Pauli Y gate </td><td>a...</td><td>named, reusable, custom gate sequences</td></tr>
-<tr><td>Z </td><td> Pauli Z gate (π phase gate)</td><td></td><td></td></tr>
-<tr><td></td><td></td><td>M</td><td>Qubit measurement pseudo-gate</td></tr>
+<tr><td>Kp(𝜃)</td><td>Phase gate (universal set) [4] </td><td>Sw</td><td>general Swap (used with a 2-digit control suffix)</td></tr>
+<tr><td>Rp(𝜃)</td><td>Rotation gate (universal set) [4]</td><th colspan="2">3-Qubit</th></tr>
+<tr><td>Rx(𝜃)</td><td>Pauli X rotation gate</td><td>Fr</td><td>general Fredkin gate (used with a 3-digit control suffix)</td></tr>
+<tr><td>Ry(𝜃)</td><td>Pauli Y rotation gate</td><td>Tf</td><td>general Toffoli gate (used with a 3-digit control suffix)</td></tr>
+<tr><td>Rz(𝜃)</td><td>Pauli Z rotation gate</td><th colspan="2">n-Qubit</th></tr>
+<tr><td>S </td><td>S gate (π/2 phase gate)</td><td>Im</td><td>Mean Inversion (used with 1-digit size suffix)</td></tr>
+<tr><td>Sa </td><td>S adjoint</td><td>Qa</td><td>Inverse Quantum Fourier Transform (used with 1-digit size suffix)</td></tr>
+<tr><td>T </td><td> π/8 gate (π/4 phase gate)</td><td>Qf</td><td>Quantum Fourier Transform (used with 1-digit size suffix)</td></tr>
+<tr><td>Ta </td><td>T adjoint</td><td></td><td></td></tr>
+<tr><td>Tp(𝜃)</td><td>Phase Rotation gate (universal set) [4]</td><td></td><td></td></tr>
+<tr><td>U(𝜃,𝜙,λ)</td><td>General one-, two-, or three-parameter rotation gate</td><th colspan="2">Other</th></tr>
+<tr><td>X </td><td> Pauli X gate </td><td>a...</td><td>named, reusable, custom gate sequences</td></tr>
+<tr><td>Y </td><td> Pauli Y gate </td><td>ct</td><td>control(c)-target(t) digit control suffix for any 1-qubit gate</td></tr>
+<tr><td>Z </td><td> Pauli Z gate (π phase gate)</td><td>M</td><td>Qubit measurement pseudo-gate</td></tr>
 </table>
 
 ## Rotational Gates
@@ -129,7 +120,15 @@ The Rx(𝜃) gate is equivalent to U(𝜃,-π/2,π/2).
 The Ry(𝜃) gate is equivalent to U(𝜃,0,0).
 
 The Rz(λ) gate is equivalent to U(0,0,λ).
-   
+
+An alternate general unitary definition is available, invoked by the -u command line flag, or the ualt comment
+flag.  The alternate definition differs only by a phase factor from the default definition above, but it can
+simplify the elements of some rotational gates.  The definition is:
+```
+cos(𝜃/2)        -exp(iλ)sin(𝜃/2)
+exp(i𝜙)sin(𝜃/2)  exp(i(𝜙+λ))cos(𝜃/2)
+```
+
 ## Gate Positioning and Replication
 
 Ungated lines (\_) have already been mentioned.  They may be repeated as many times as needed (subject to maximum
@@ -141,28 +140,33 @@ a circuit step created from the tensor product of 2 Identity gates on lines 0 an
 of a 5-qubit circuit.  The replication is only applicable to single-qubit gates, and uses only a single digit.
 As an alternative, the gate name can be repeated. :HHHH is the same as :H4.
 
-Non-adjacent gates are handled by infixed underscores (\_), such as :_X_X, which puts two X gates on lines 1 and 3
+Non-adjacent gates are handled by infixed underscores (\_), such as :\_X\_X, which puts two X gates on lines 1 and 3
 of a 4-qubit circuit.
 
 ## Controlled Gate Names
 
 <img src="img/Screen Shot 2020-05-03 at 8.30.54 PM.png" width="645" height="268" alt="suffix notation corresponding to CNOT gates in a circuit"/>
 
-Qubit line numbers on a controlled gate are relative to the span of the gate.
+Qubit line numbers on a controlled gate can be relative to the span of the gate, or absolute.
 
 The span of a gate is the difference between the minimum and maximum control/target lines plus one.
-Reading left to right, controls occur first, then target, each as a single digit.  The span of the control
-suffix 02 is 3 (2-0+1=3) lines,
+Reading left to right, controls occur first, then target, each as a single digit.  As an example, the
+control suffix 02 has a span of 3 (2-0+1=3) lines,
 and indicates a control on relative line 0 and a target on relative line 2.
 
 Ungated prefixes and suffixes are used, as in all other gates, to position the gate vertically in the circuit.
 Lines within the span that are not control or target lines are ungated by implication.
 
+With a absolute suffix, the control and target digits indicate the actual lines of the circuit.  No leading
+\_'s are needed for positioning.  Trailing \_'s may still be needed.
+
+Either absolute or relative notation may be uaed.
+
 Any single qubit gate can be followed by a control suffix to make it a controlled gate.
 
 ## Display
 
-The default display is the resulting gate matrix or a quantum state transposed column vector.
+The default display is the resulting gate matrix, or a quantum state transposed column vector.
 
 If the gate sequence was supplied with an initial value (see below), that value is displayed before the gate sequence is executed.
 
@@ -274,11 +278,14 @@ In interactive mode, it is possible to set switch controls by preceding the swit
 
     kdisp - display quantum states in ket notation (default is transposed column vector)
     trace - display the resulting quantum state (or equivalent matrix) at each step of the quantum circuit
-    none - turn off kdisp and trace
+    ualt - use the alternate definition of a general 1-qubit unitary matrix
+    none - reset all switches
+
+When the $name appears in a comment, the switch is toggled.
 
 ### Interactive help
 
-    The keyword gate[s] immediately following the hash character in an interactive comment will display a short
+    The keyword $gate[s] immediately following the hash character in an interactive comment will display a short
     help regarding the available gates.
 
 ## Conclusion
@@ -289,11 +296,49 @@ It is an educational tool that can be easily used by students new to Quantum Com
 
 It provides automatic mathematical analysis of circuits by incorporating the matrix mathematics necessary
 to provide insight to circuit operation, and by displaying the details at each execution step, something
-not available from quantum computer execution.
+not available from quantum computer simulated execution.
 
 It can be executed in interactive or batch mode.
 
 QQCS is available through the NodeJS Package Manager, npm, and is executed using NodeJS.
+
+## Notes on Version 1.3.0
+
+    * An alternate general unitary matrix definition is available with the -u flag on start-up, or with the $ualt
+      interactive comment flag
+    * The Fredkin (Fr) gate, controlled swap, has been added
+    * The n-qubit Quantum Fourier Transform (Qf) anf Inverse QFT (Qa) gates have been added
+    * The gates Kp(𝜙), Rp(𝛽), and Tp(𝛼), which are the universal gate set from [4] have been added
+    * The gate suffix notation has been simplified in an upward compatible way
+        * actual circuit line numbers can now be used in multiple-qubit gates, instead of relative ones
+        * this eliminates the need for leading _'s to indicate identify matrix positioning
+        * as an example, the following are equivalent
+            * X12 and _X01
+            * X24 and __X02
+            * Fr123 and _Fr012
+        * the number of qubits in the circuit will be taken as the maximum size of the circuit, unless overridden by trailing _'s
+    * Control suffixes are allowed on all single qubit gates
+
+### Fixes
+
+    * When a non-zero element of a matrix was set to zero, the sparse matrix structure was corrupted.
+
+## Notes on Version 1.2.0
+
+Version 1.2.0 introduces several upward incompatibilities in order to expand the set of gates supported and to
+simplify the syntax:
+
+    * Ungated circuit lines are now represented by the underscore (_) character, not the lower case i
+    * The comma syntax for ungated circuit lines between gates has been eliminated.  What used to be specified
+      as :X,I,X can now be specified as :X_X
+    * The S adjoint gate has been renamed from 's' to 'Sa'.  A similiar change has been made for the T adjoint gate. 
+    * In prior versions, factoring at the end of a custom gate assignment was displayed but did not affect the
+      assigned gate matrix.  It now does.
+
+New features in version 1.2.0 include:
+
+    * Rx(𝜃), Ry(𝜃), and Rz(𝜃) rotation gates
+    * U(𝜃,𝜙,λ), general rotation gate (U1, U2, and U3) based on a three parameter general 2x2 unitary matrix 
 
 ## QQCS Linear Notation Syntax
 
