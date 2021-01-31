@@ -595,23 +595,23 @@ class SpMatrix
     {
       ++st;
     }
-    if (ix === rwa[st])
+    if (st < en && ix === rwa[st])
     {
       prv = vla[st];
       if (arguments.length < 3)
         return prv;
-    }  // otherwise st is the index at wihich a new value can be inserted
+    }  // otherwise st is the index at which a new value can be inserted
     if (prv != null)  // a value was found and should be replaced
     {
       if (val.isZero())  // value to be deleted is at st
       {
         // delete a value
-        en = vla.length;
+        en = vla.length - 1;
         while (en > st)
         {
-          vla[en - 1] = vla[en];
-          rwa[en - 1] = rwa[en];
-          --en;
+          vla[st] = vla[st + 1];
+          rwa[st] = rwa[st + 1];
+          ++st;
         }
         vla.pop();
         rwa.pop();
