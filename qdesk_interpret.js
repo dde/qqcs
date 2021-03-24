@@ -260,7 +260,7 @@ class QDeskInterpret
         throw new Error('opcode ' + opc + ' is unknown');
       c1 = parseInt(sf.charAt(0));
       t1 = parseInt(sf.charAt(1));
-      op = this.Quantum.buildCNOT(Math.abs(c1 - t1) + 1, c1, t1);
+      op = this.Quantum.buildCNOT(Math.max(c1, t1) + 1, c1, t1);
       break;
     case 'Im':
       if (sf.length > 1)

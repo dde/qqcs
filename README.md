@@ -145,7 +145,7 @@ of a 4-qubit circuit.
 
 ## Controlled Gate Names
 
-<img src="img/Screen Shot 2020-05-03 at 8.30.54 PM.png" width="645" height="268" alt="suffix notation corresponding to CNOT gates in a circuit"/>
+<img src="img/Screen Shot 2021-02-14 at 11.02.03 AM.png" width="615" height="301" alt="suffix notation corresponding to CNOT gates in a circuit"/>
 
 Qubit line numbers on a controlled gate can be relative to the span of the gate, or absolute.
 
