@@ -22,3 +22,5 @@
 - [**#11**](https://github.com/dde/qqcs/issues/11) V1.2.0 Enhancements
 ## [**1.3.1**](https://github.com/dde/qqcs/issues?milestone=12&state=closed)
 - [**#12**](https://github.com/dde/qqcs/issues/11) Fixed in V1.3.1
+## [**1.3.2**](https://github.com/dde/qqcs/issues?milestone=13&state=closed)
+- [**#13**](https://github.com/dde/qqcs/issues/11) Fixed in V1.3.2
