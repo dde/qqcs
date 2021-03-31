@@ -243,11 +243,9 @@ class QDeskInterpret
     case 'X':
     case 'Y':
     case 'Z':
-      op = this.base_set[bas];
-      op = suffix(this, sf, op, opc);
-      break;
     case '_':
       op = this.base_set[bas];
+      op = suffix(this, sf, op, opc);
       break;
     case 'Cx':
       op = this.Quantum.controlledNotGate;
