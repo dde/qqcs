@@ -1,0 +1,189 @@
+# rotational QDesk syntax
+           pgm -> stmt stmt-list eof
+     stmt-list -> eol stmt stmt-list
+     stmt-list ->
+          stmt -> ident gate-sequence
+          stmt -> initial-value gate-sequence
+ initial-value -> q-state
+ initial-value -> q-state-list
+ initial-value ->
+ gate-sequence -> g-seq-tail g-factor
+    g-seq-tail -> : gates g-seq-tail
+    g-seq-tail ->
+      g-factor -> / unop Complex
+      g-factor ->
+  q-state-list -> ( q-state ) q-state-list
+  q-state-list ->
+       q-state -> unop v-comp p-state-tail
+  p-state-tail -> addop v-comp p-state-tail
+  p-state-tail ->
+         gates -> full-gate gates
+         gates ->
+     full-gate -> gate gate-suffix
+     full-gate -> ident
+   gate-suffix -> gate-angle gate-repl
+#   gate-suffix ->
+    gate-angle -> ( unop Real reals )
+    gate-angle ->
+     gate-repl -> integer
+     gate-repl ->
+         reals -> , unop Real reals
+         reals ->
+        v-comp -> coeff ket
+         coeff -> Complex
+         coeff ->
+           ket -> | integer >
+#           bra -> < integer |
+         Complex -> complex
+         Complex -> Real
+          Real -> real
+          Real -> integer
+         addop -> +
+         addop -> -
+          unop -> -
+          unop ->
+
+# Terminal-mapping
+# | bar
+# > great
+# : colon
+# , comma
+# gate gate
+# ident ident
+# complex complex
+# real real
+# integer integer
+# / divide
+# + plus
+# - minus
+# ( lparen
+# ) rparen
+# eol eol
+# eof none
+# end-mapping
+
+#@stmt-list-1
+#_sv = _rt;
+#@stmt-list-2
+#if (null != _sv)
+#{
+#  _sv.next = _rt;
+#  _rt = _sv;
+#}
+#@stmt-1
+#_rt = new this.exe.NamedGate(_tk.token, _rt);
+#@stmt-2
+#_sv = _rt;
+#@stmt-3
+#if (null == _sv)
+#  return _rt;
+#_rt = this._append(_sv, _rt);
+#@q-state-1
+#_sv = _rt;
+#@q-state-2
+#if (null != _sv)
+#  _rt.negate();
+#_sv = _rt;
+#@q-state-3
+#_rt.unshift(_sv);
+#_rt = new this.exe.Qubit(_rt);
+#@q-state-list-1
+#_sv = _rt;
+#@q-state-list-3
+#_sv.next = _rt;
+#_rt = _sv;
+#@gate-sequence-1
+#_sv = _rt;
+#@gate-sequence-2
+#_rt = this._append(_sv, _rt);
+#@g-seq-tail-1
+#_rt.finish()
+#_sv = _rt;
+#@g-seq-tail-2
+#_sv.next = _rt;
+#_rt = _sv;
+#@gate-1
+#_sv = _rt;
+#@gate-2
+#_sv.combine(_rt);
+#_rt = _sv;
+#@gates-1
+#_sv = _rt;
+#@gates-2
+#_sv.combine(_rt);
+#_rt = _sv;
+#@full-gate-1
+#_rt = new this.exe.Gate(_tk.token, _rt);
+#@full-gate-2
+#_rt = new this.exe.Gate(_tk.token, null);
+#@unop-1
+#_rt = true;
+#@v-comp-1
+#_sv = _rt;
+#@v-comp-2
+#_rt.coeff = _sv;
+#@p-state-tail-0
+#_rt = [];
+#@p-state-tail-1
+#_sv = _rt;
+#@p-state-tail-2
+#if (_sv < 0)
+#  _rt.negate();
+#_sv = _rt;
+#@p-state-tail-3
+#_rt.unshift(_sv);
+#@addop-1
+#_rt = 1.0;
+#@addop-2
+#_rt = -1.0;
+#@coeff-0
+#_rt = Number(1.0);
+#@coeff-1
+#_rt = _tk.token;
+#@coeff-2
+#_rt = _tk.token;
+#@ket-1
+#_sv = new this.exe.Ket(_tk.token);
+#@ket-2
+#_rt = _sv;
+#@g-factor-1
+#_sv = _rt;
+#@g-factor-2
+#_rt = new this.exe.GateFactor(_rt.token);
+#if (null != _sv)
+#  _rt.negate();
+#@gate-suffix-1
+#_sv = _rt;  // angle if any
+#@gate-suffix-2
+#_rt = [_sv, _rt];
+#@gate-angle-1
+#_sv = _rt;
+#@gate-angle-2
+#if (null != _sv)
+#  _rt *= -1.0;
+#_sv = [_rt];
+#@gate-angle-3
+#_rt = _sv.concat(_rt);
+#@gate-repl-1
+#_rt = _tk.token;
+#@reals-0
+#_rt = [];
+#@reals-1
+#_sv = _rt;
+#@reals-2
+#if (null != _sv)
+#  _rt *= -1.0;
+#_sv = [_rt];
+#@reals-3
+#_rt = _sv.concat(_rt);
+#@Complex-1
+#_rt = _tk;
+#@Complex-2
+#_rt = _tk;
+#@Complex-3
+#_rt = _tk;
+#@Real-1
+#_rt = parseFloat(_tk.token);
+#@Real-2
+#_rt = parseFloat(_tk.token);
+#@end
