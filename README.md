@@ -4,6 +4,12 @@ QQCS is installed with the Node Package Manager.  First, install NodeJS.  Then, 
 
 ```npm install qqcs```
 
+To run, go to the ```node_modules``` directory, and enter:
+
+```node qqcs``` -or- ```node qqcs/qdesk.js```
+
+Use the command line switch -h to get help.
+
 ## Overview
 
 The student new to Quantum Computing immediately confronts the steep hurdle of the mathematics of complex vector
