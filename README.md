@@ -1,6 +1,8 @@
 # QQCS - Quick Quantum Circuit Simulation
 
+QQCS is installed with the Node Package Manager.  First, install NodeJS.  Then, at the command line, enter:
 
+```npm install qqcs```
 
 ## Overview
 
