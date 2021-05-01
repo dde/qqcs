@@ -1,6 +1,7 @@
 /**
  * Created by danevans on 4/4/20.
  */
+// my next project -Siddh
 let qq = require('./quantum.js');
 class LogicErr extends Error
 {
