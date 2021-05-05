@@ -36,7 +36,7 @@ Although QQCS is "one more thing to learn", it is designed to be an intuitive ch
 quantum circuit, using familiar gate names and quantum notation, drawing on existing concepts so that the
 learning is minimal.
 
-## Quantum Circuit Simulation
+## Introduction
 
 A quantum circuit simulation is not a quantum computer simulation.  It is a mathematical rendering of each step
 of a quantum algorithm that is described by a sequence of gate operations on an initial quantum state.
@@ -44,21 +44,11 @@ of a quantum algorithm that is described by a sequence of gate operations on an 
 The QQCS software renders the simulation. The system allows a student to quickly construct a circuit using a linear notation motivated by the circuits
 themselves, and to acquire the information to analyze an algorithm quickly without the need for tedious calculations.
 
-## Introduction
-
 The following gate sequence \[6\] may or may not implement a controlled Hadamard gate.  How is one to tell?
 
 <img src="img/Screen Shot 2020-05-03 at 3.41.56 PM.png" alt="equivalent gate sequence for a controlled Hadamard gate"/>
 
-Writing a program in QASM \[6\] will give you counts at the end, but it will be difficult to say for sure those counts represent a controlled H-gate
-
-You can write a QuTIP \[9\] program in Python, or use Python interactively to invoke QuTIP functions after studying QuTIP and the Num.py library
-
-Or you can interactively enter a single QQCS statement
-
-## A QQCS Statement
-
-Here is the interactive QQCS statement and its output to answer the question (the \[ 1\] is the line number prompt):
+QQCS answers the question with a single intereactive statement.  The \[ 1\] is the line number prompt.
 
 ```
 [ 1] :_H:_Sa:Cx:_H:_T:Cx:_T:_H:_S:_X:S_
@@ -395,6 +385,5 @@ New features in version 1.2.0 include:
 [6] A. Cross, L. Bishop, J. Smolin, J. Gambetta (2017). Open Quantum Assembly Language. retrieve https://arxiv.org/pdf/1707.03429.pdf.
 [7] IBM, the Quantum Experience web site (2019) retrieve http://quantumexperience.ng.bluemix.net/.
 [8] The QISKit SDK for Quantum Software Development (2019). retrieve https://github.com/QISKit.
-[9] QuTIP (2019) - Quantum Toolbox In Python, a set of software tools for quantum math, visualization, and simulation, retrieve http://qutip.org/.
-[10] QPIC (2018) Creating quantum circuit diagrams in TikZ. retrieve https://github.com/qpic/qpic.
+[9] QPIC (2018) Creating quantum circuit diagrams in TikZ. retrieve https://github.com/qpic/qpic.
 ```
