@@ -143,7 +143,7 @@
     usage();
   if (cfg.interactive || 0 === cfg.files.length)
   {
-    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt, interactive:true});
+    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt, interactive:true, rzeroes: cfg.rzeroes});
     lex = new qd.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
     tt = require('./qdesk_interactive.js');
