@@ -3,11 +3,12 @@
  */
 (function() {
   function usage() {
-    console.log("usage: node %s [-i] [-t] [-k] [-h] [input-files]", 'qdesk.js');
+    console.log("usage: node %s [-i] [-t] [-k] [-p] [-h] [input-files]", 'qdesk.js');
     console.log("  i - interactive mode");
     console.log("  t - trace circuit steps");
     console.log("  k - use ket display when circuit initial value is provided");
     console.log("  u - use alternate unitary matrix definition for unitary gates");
+    console.log("  r - replace zero elements (0) in sparse matrices with periods (.) for better readability");
     console.log("  h - or no parameters displays this help");
     console.log("  input-files - zero or more input QDesk statement files");
     process.exit(1);
@@ -124,6 +125,7 @@
     interactive: false,
     trace: false,
     kdisp: false,
+    rzeroes: false,
     help: false,
     ualt: false,
     flags: {
@@ -131,10 +133,12 @@
       t: 'trace',
       k: 'kdisp',
       u: 'ualt',
+      r: 'rzeroes',
       h: 'help'
     }
   };
   cmdArgs(cfg, usage);
+  configReplaceZeroes = cfg.rzeroes
   if (cfg.help)
     usage();
   if (cfg.interactive || 0 === cfg.files.length)

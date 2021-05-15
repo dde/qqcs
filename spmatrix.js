@@ -713,6 +713,7 @@ class SpMatrix
       return str;
     }
     let ix, jx, str, dsp, sgn, lnc, ln, cln, d1 = this._rows, d2 = this._cols;
+    let singleElement;
     cln = this.rebuild();
     dsp = new Array(d1);
     for (jx = 0; jx < d2; ++jx)
@@ -722,7 +723,8 @@ class SpMatrix
       str = new Array(d1);
       for (ix = 0; ix < d1; ++ix)
       {
-        str[ix] = cln.sub(ix, jx).disp();
+        singleElement = cln.sub(ix, jx).disp();
+        str[ix] = configReplaceZeroes && singleElement === '0' ? '.' : singleElement;
         ln = str[ix].length;
         if (lnc < ln)
           lnc = ln;
