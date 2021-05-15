@@ -36,7 +36,7 @@ class QDeskInterpret
     this.Ket = Ket;
     if (undefined === cfg)
     {
-      this.cfg = {trace:false, kdisp:false, ualt:false};
+      this.cfg = {trace:false, kdisp:false, ualt:false, rzeroes:false};
     }
     else
     {
@@ -50,6 +50,8 @@ class QDeskInterpret
         this.cfg.trace = false;
       if (typeof cfg.ualt !== 'boolean')
         this.cfg.ualt = false
+      if (typeof cfg.rzeroes !== 'boolean')
+        this.cfg.rzeroes = false
       else
         this.Quantum.setUMatrix(this.cfg.ualt);
     }
@@ -123,6 +125,7 @@ class QDeskInterpret
     mch[1] = cmt.indexOf('$kdisp');
     mch[2] = cmt.indexOf('$ualt');
     mch[3] = cmt.indexOf('$none');
+    mch[4] = cmt.indexOf('$rzeroes');
     if (-1 < mch[0])
     {
       this.cfg.trace = !this.cfg.trace;
@@ -144,6 +147,11 @@ class QDeskInterpret
       this.cfg.ualt = false;
       this.Quantum.setUMatrix(this.cfg.ualt);
       this.inst_set = {};  // clear the cache of any previous U() definitions
+    }
+    if (-1 < mch[4])
+    {
+      this.cfg.rzeroes = !this.cfg.rzeroes;
+      configReplaceZeroes = !configReplaceZeroes;
     }
     if (this.cfg.interactive)
     {

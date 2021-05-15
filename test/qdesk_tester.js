@@ -75,6 +75,7 @@ let cfg = {
   flags:{k:'kdisp', t:'trace', s:'sparse', u:'ualt'}
 };
 let tt, tc, tst, tstout, assert, fai, util;
+  configReplaceZeroes = cfg.rzeroes
   cmdArgs(cfg, usage);
   if (0 === cfg.files.length)
   {
