@@ -277,6 +277,7 @@ In interactive mode, it is possible to set switch controls by preceding the swit
     kdisp - display quantum states in ket notation (default is transposed column vector)
     trace - display the resulting quantum state (or equivalent matrix) at each step of the quantum circuit
     ualt - use the alternate definition of a general 1-qubit unitary matrix
+    rzeroes - replace zero elements (0) with periods (.) so that non-zero entries in a matrix display of a sparse matrix can be seen more clearly 
     none - reset all switches
 
 When the $name appears in a comment, the switch is toggled.
