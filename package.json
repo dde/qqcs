@@ -1,6 +1,6 @@
 {
   "name": "qqcs",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Quick Quantum Circuit Simulation",
   "main": "qdesk.js",
   "scripts": {
