@@ -3,7 +3,7 @@
  */
 (function() {
   function usage() {
-    console.log("usage: node %s [-i] [-t] [-k] [-p] [-h] [input-files]", 'qdesk.js');
+    console.log("usage: node %s [-i] [-t] [-k] [-r] [-h] [input-files]", 'qdesk.js');
     console.log("  i - interactive mode");
     console.log("  t - trace circuit steps");
     console.log("  k - use ket display when circuit initial value is provided");
@@ -114,6 +114,7 @@
   let lex, compiler, interp, stmt;
   let tt, intro =
       ['Quick Quantum Circuit Simulation\n',
+        '  #$gate - display a gate summary\n',
         '  left arrow - move cursor left;  right arrow - move cursor right\n',
         '  delete (Mac) - delete the character left of cursor and shift characters left\n',
         '  backspace (Win) - same as delete\n',

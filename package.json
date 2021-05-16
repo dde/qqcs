@@ -1,6 +1,6 @@
 {
   "name": "qqcs",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Quick Quantum Circuit Simulation",
   "main": "qdesk.js",
   "scripts": {
@@ -12,10 +12,10 @@
   },
   "keywords": [
     "quantum",
-    "quantum computing",
-    "quantum circuit simulation",
-    "quantum calculator",
-    "quantum programming"
+    "computing",
+    "circuit",
+    "simulation",
+    "calculator"
   ],
   "author": "Daniel Evans",
   "license": "BSD-3-Clause",
