@@ -1,6 +1,6 @@
 {
   "name": "qqcs",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "Quick Quantum Circuit Simulation",
   "main": "qdesk.js",
   "scripts": {
@@ -16,6 +16,25 @@
     "circuit",
     "simulation",
     "calculator"
+  ],
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+    "cmatrix.js",
+    "complex.js",
+    "img/Screen Shot 2020-05-03 at 3.41.56 PM.png",
+    "img/Screen Shot 2021-02-14 at 11.02.03 AM.png",
+    "package.json",
+    "qdesk_compile.js",
+    "qdesk_interactive.js",
+    "qdesk_interpret.js",
+    "qdesk_lexer.js",
+    "qdesk.js",
+    "quantum.js",
+    "spmatrix.js",
+    "test/qdesk_tester.js",
+    "test/test_cases.js"
   ],
   "author": "Daniel Evans",
   "license": "BSD-3-Clause",
