@@ -82,7 +82,7 @@ function SysinReader(callback, intro) {
       if ('\u0004' === ch || '\u0003' === ch)
       {
         process.stdin.emit('end');
-        continue;
+        break;
       }
       esc = escapeCheck(chunk);
       if (IGN !== esc)
@@ -199,6 +199,7 @@ function SysinReader(callback, intro) {
   process.stdin.on('end', () => {
     //process.stdin.setRawMode(false);
     process.stdout.write('Good-bye\n');
+    process.stdin.setRawMode(false);
   });
 }
 // function test() {
