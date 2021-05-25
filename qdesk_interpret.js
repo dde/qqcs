@@ -49,11 +49,11 @@ class QDeskInterpret
       if (typeof cfg.trace !== 'boolean')
         this.cfg.trace = false;
       if (typeof cfg.ualt !== 'boolean')
-        this.cfg.ualt = false
+        this.cfg.ualt = false;
+      this.Quantum.setUMatrix(this.cfg.ualt);
       if (typeof cfg.rzeroes !== 'boolean')
         this.cfg.rzeroes = false
-      else
-        this.Quantum.setUMatrix(this.cfg.ualt);
+      this.Matrix.setReplaceZeroes(cfg.rzeroes);
     }
     if (this.cfg.test)
     {
@@ -111,13 +111,26 @@ class QDeskInterpret
   clearFlags() {
     this.cfg.trace = false;
     this.cfg.kdisp = false;
-    this.Quantum.setUMatrix(false);
+    this.cfg.ualt = false;
+    this.Quantum.setUMatrix(this.cfg.ualt);
+    this.cfg.rzeroes = false;
+    this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
   }
   setFlags(cfg) {
     if (undefined !== cfg.trace)
       this.cfg.trace = Boolean(cfg.trace);
     if (undefined !== cfg.kdisp)
       this.cfg.kdisp = Boolean(cfg.kdisp);
+    if (undefined !== cfg.ualt)
+    {
+      this.cfg.ualt = Boolean(cfg.ualt);
+      this.Quantum.setUMatrix(this.cfg.ualt);
+    }
+    if (undefined !== cfg.rzeroes)
+    {
+      this.cfg.rzeroes = Boolean(cfg.rzeroes);
+      this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
+    }
   }
   commentProcessor(cmt) {
     let mch = [];
@@ -146,12 +159,15 @@ class QDeskInterpret
       this.cfg.kdisp = false;
       this.cfg.ualt = false;
       this.Quantum.setUMatrix(this.cfg.ualt);
+      this.cfg.rzeroes = false;
+      this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
       this.inst_set = {};  // clear the cache of any previous U() definitions
     }
     if (-1 < mch[4])
     {
       this.cfg.rzeroes = !this.cfg.rzeroes;
-      configReplaceZeroes = !configReplaceZeroes;
+      //configReplaceZeroes = !configReplaceZeroes;
+      this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
     }
     if (this.cfg.interactive)
     {
@@ -630,7 +646,8 @@ class Qubit extends Operand
     for (_k of ka)
     {
       // this._vector.mat[_k.basis][0] = new QDeskInterpret.single.Complex(_k.coeff);
-      this._vector.sub(_k.basis, 0, new QDeskInterpret.single.Complex(_k.coeff));
+      // this._vector.sub(_k.basis, 0, new QDeskInterpret.single.Complex(_k.coeff));
+      this._vector.sub(_k.basis, 0, _k.coeff.sum(this._vector.sub(_k.basis, 0)));
     }
     _bts = new QDeskInterpret.single.Complex(0);
     for (_mn = 0; _mn < this.vector.rows(); ++_mn)
