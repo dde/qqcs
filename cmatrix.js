@@ -489,7 +489,7 @@ CMatrix.prototype.edisp = function() {
       str += ' '.repeat(wid - ln);
     return str;
   }
-  let ix, jx, str, dsp, sgn, lnc, ln, d1 = this.rows(), d2 = this.columns();
+  let ix, jx, str, dsp, sgn, lnc, ln, d1 = this.rows(), d2 = this.columns(), elm;
   dsp = new Array(d1);
   for (jx = 0; jx < d2; ++jx)
   {
@@ -498,10 +498,8 @@ CMatrix.prototype.edisp = function() {
     str = new Array(d1);
     for (ix = 0; ix < d1; ++ix)
     {
-      if (this.mat[ix][jx].isZero())
-        str[ix] = '.';
-      else
-        str[ix] = this.mat[ix][jx].disp();
+      elm = this.mat[ix][jx];
+      str[ix] = (CMatrix.configReplaceZeroes && elm.isZero()) ? '.' : elm.disp();
       ln = str[ix].length;
       if (lnc < ln)
         lnc = ln;
@@ -576,6 +574,11 @@ CMatrix.prototype.dispRow = function(ix) {
   }
   return str.join(' ');
 };
+CMatrix.configReplaceZeroes = false;
+CMatrix.setReplaceZeroes = function (flg) {
+  if (typeof flg === 'boolean')
+    CMatrix.configReplaceZeroes = flg;
+}
 /*function CVector(v)
 {
   if (1 === arguments.length)

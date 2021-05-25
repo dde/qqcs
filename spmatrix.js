@@ -550,7 +550,7 @@ class SpMatrix
     return cln;
   }
   clonenv() {
-    let cln;
+    let cln, ix;
     cln = new SpMatrix(this._rows, this._cols);
     cln.spm[0] = [];
     for (ix = 0; ix < this.spm[1].length; ++ix)
@@ -676,9 +676,9 @@ class SpMatrix
       if (!vl.isZero())
       {
         basis = Number(ix).toString(2);
-        while (basis.length < qbs)
-          basis = '0' + basis;
-        basis = '|' + basis + '>';
+        // while (basis.length < qbs)
+        //   basis = '0' + basis;
+        basis = '|' + '0'.repeat(qbs - basis.length) + basis + '>';
         if (!one.equal(vl))
         {
           coef = vl.disp(Complex.precision);
@@ -691,7 +691,7 @@ class SpMatrix
         else
         {
           coef = (0 === qout.length) ? '' : '+';
-          coef = '';
+          //coef = '';
         }
         qout.push(coef + basis)
       }
@@ -714,7 +714,7 @@ class SpMatrix
     }
     let ix, jx, str, dsp, sgn, lnc, ln, cln, d1 = this._rows, d2 = this._cols;
     let singleElement;
-    cln = this.rebuild();
+    //cln = this.rebuild();
     dsp = new Array(d1);
     for (jx = 0; jx < d2; ++jx)
     {
@@ -723,8 +723,8 @@ class SpMatrix
       str = new Array(d1);
       for (ix = 0; ix < d1; ++ix)
       {
-        singleElement = cln.sub(ix, jx).disp();
-        str[ix] = configReplaceZeroes && singleElement === '0' ? '.' : singleElement;
+        singleElement = this.sub(ix, jx);
+        str[ix] = (SpMatrix.configReplaceZeroes && singleElement.isZero()) ? '.' : singleElement.disp();
         ln = str[ix].length;
         if (lnc < ln)
           lnc = ln;
@@ -789,6 +789,11 @@ class SpMatrix
   iterate() {
 
   }
+}
+SpMatrix.configReplaceZeroes = false;
+SpMatrix.setReplaceZeroes = function (flg) {
+  if (typeof flg === 'boolean')
+    SpMatrix.configReplaceZeroes = flg;
 }
 /*
 (function() {
