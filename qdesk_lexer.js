@@ -606,22 +606,22 @@ class QDeskLexer
         // console.log('lex:%s', this.ltk.toString());
         return this.ltk;
       }
-      if (_ch === QDeskLexer.QT || _ch === QDeskLexer.DQT)
-      {
-        _dl = _ch;
-        this.tkn = [];
-        _id = this.next();
-        while (_id !== _dl)
-        {
-          if (_id === QDeskLexer.NL)
-            throw new LexErr("missing closing quote at " + String(this.linenumber) + ':' + String(this.position));
-          this.tkn.push(_id);
-          _id = this.next();
-        }
-        this.ltk = new this.Symbol(this.Symbol.string, this.tkn.join(''), true);
-        // console.log('lex:%s', this.ltk.toString());
-        return this.ltk;
-      }
+      // if (_ch === QDeskLexer.QT || _ch === QDeskLexer.DQT)
+      // {
+      //   _dl = _ch;
+      //   this.tkn = [];
+      //   _id = this.next();
+      //   while (_id !== _dl)
+      //   {
+      //     if (_id === QDeskLexer.NL)
+      //       throw new LexErr("missing closing quote at " + String(this.linenumber) + ':' + String(this.position));
+      //     this.tkn.push(_id);
+      //     _id = this.next();
+      //   }
+      //   this.ltk = new this.Symbol(this.Symbol.string, this.tkn.join(''), true);
+      //   // console.log('lex:%s', this.ltk.toString());
+      //   return this.ltk;
+      // }
       // _ch = this.next();
       if ((_ch >= QDeskLexer.UCA && _ch <= QDeskLexer.UCZ) || (_ch >= QDeskLexer.LCA && _ch <= QDeskLexer.LCZ) ||
            _ch === QDeskLexer.UNDER)
