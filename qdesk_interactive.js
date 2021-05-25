@@ -199,6 +199,7 @@ function SysinReader(callback, intro) {
   process.stdin.on('end', () => {
     //process.stdin.setRawMode(false);
     process.stdout.write('Good-bye\n');
+    process.exit(0);
   });
 }
 // function test() {
