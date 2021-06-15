@@ -99,9 +99,9 @@
       return;
     }
     tkn = lex.next_token();
-    if (qd.Symbol.none === tkn.symbol)
+    if (qd.QlxSymbol.none === tkn.symbol)
       return;
-    if (qd.Symbol.eol !== tkn.symbol)
+    if (qd.QlxSymbol.eol !== tkn.symbol)
     {
       console.log('logic error (line end) symbol %s', tkn.toString());
     }
@@ -139,14 +139,13 @@
     }
   };
   cmdArgs(cfg, usage);
-  configReplaceZeroes = cfg.rzeroes
   if (cfg.help)
     usage();
   if (cfg.interactive || 0 === cfg.files.length)
   {
     interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt, interactive:true, rzeroes: cfg.rzeroes});
     lex = new qd.QDeskLexer('interactive', interp.getCommentProcessor());
-    compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
+    compiler = new qq.QDeskCompile(lex, qd.QlxSymbol, interp);
     tt = require('./qdesk_interactive.js');
     tt.terminal(interpret_cb, intro);
   }
@@ -158,7 +157,7 @@
       console.log('--- file:%s---', cfg.files[ix])
       interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt});
       lex = new qd.QDeskLexer(cfg.files[ix],  interp.getCommentProcessor());
-      compiler = new qq.QDeskCompile(lex, qd.Symbol, interp);
+      compiler = new qq.QDeskCompile(lex, qd.QlxSymbol, interp);
       // if (cfg.skel)
       // {
       //   stmt = compiler._pgm();
@@ -170,9 +169,9 @@
       {
         interp.exec(stmt);
         tkn = lex.next_token();
-        if (qd.Symbol.none === tkn.symbol)
+        if (qd.QlxSymbol.none === tkn.symbol)
           break;
-        if (qd.Symbol.eol !== tkn.symbol)
+        if (qd.QlxSymbol.eol !== tkn.symbol)
         {
           console.log('logic error symbol %s', tkn.toString());
           break;

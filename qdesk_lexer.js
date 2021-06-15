@@ -1,73 +1,73 @@
 /**
  * Created by danevans on 3/23/20.
  */
-function Symbol (sym, str, flg) {
+function QlxSymbol (sym, str, flg) {
   this.symbol = sym;
   if (arguments.length >= 2)
     this.token = str;
   else
-    this.token = Symbol.tokens[sym];
+    this.token = QlxSymbol.tokens[sym];
   if (arguments.length >= 3)
     this.flag = flg;
   else
     this.flag = false;
 }
-Symbol.none = 0;
-Symbol.empty = Symbol.none + 1;
-Symbol.eol = Symbol.empty + 1;
-Symbol.ident = Symbol.eol + 1;
-Symbol.equal = Symbol.ident + 1;
-Symbol.comma = Symbol.equal + 1;
-Symbol.lbrak = Symbol.comma + 1;
-Symbol.rbrak = Symbol.lbrak + 1;
-Symbol.lbrac = Symbol.rbrak + 1;
-Symbol.rbrac = Symbol.lbrac + 1;
-Symbol.lparen = Symbol.rbrac + 1;
-Symbol.rparen = Symbol.lparen + 1;
-Symbol.colon = Symbol.rparen + 1;
-Symbol.semi = Symbol.colon + 1;
-Symbol.arrow = Symbol.semi + 1;
-Symbol.plus = Symbol.arrow + 1;
-Symbol.minus = Symbol.plus + 1;
-Symbol.times = Symbol.minus + 1;
-Symbol.divide = Symbol.times + 1;
-Symbol.power = Symbol.divide + 1;
-Symbol.string = Symbol.power + 1;
-Symbol.integer = Symbol.string + 1;
-Symbol.real = Symbol.integer + 1;
-Symbol.complex = Symbol.real + 1;
-Symbol.bar = Symbol.complex + 1;
-Symbol.less = Symbol.bar + 1;
-Symbol.great = Symbol.less + 1;
-Symbol.barrier = Symbol.great + 1;
-Symbol.reset = Symbol.barrier + 1;
-Symbol.creg = Symbol.reset + 1;
-Symbol.gate = Symbol.creg + 1;
-Symbol['if'] = Symbol.gate + 1;
-Symbol.include = Symbol['if'] + 1;
-Symbol.measure = Symbol.include + 1;
-Symbol.opaque = Symbol.measure + 1;
-Symbol.qreg = Symbol.opaque + 1;
-Symbol.CX = Symbol.qreg + 1;
-Symbol.U = Symbol.CX + 1;
-Symbol.OPENQASM = Symbol.U + 1;
-Symbol.pi = Symbol.OPENQASM + 1;
-Symbol.sin = Symbol.pi + 1;
-Symbol.cos = Symbol.sin + 1;
-Symbol.tan = Symbol.cos + 1;
-Symbol.exp = Symbol.tan + 1;
-Symbol.ln = Symbol.exp + 1;
-Symbol.sqrt = Symbol.ln + 1;
+QlxSymbol.none = 0;
+QlxSymbol.empty = QlxSymbol.none + 1;
+QlxSymbol.eol = QlxSymbol.empty + 1;
+QlxSymbol.ident = QlxSymbol.eol + 1;
+QlxSymbol.equal = QlxSymbol.ident + 1;
+QlxSymbol.comma = QlxSymbol.equal + 1;
+QlxSymbol.lbrak = QlxSymbol.comma + 1;
+QlxSymbol.rbrak = QlxSymbol.lbrak + 1;
+QlxSymbol.lbrac = QlxSymbol.rbrak + 1;
+QlxSymbol.rbrac = QlxSymbol.lbrac + 1;
+QlxSymbol.lparen = QlxSymbol.rbrac + 1;
+QlxSymbol.rparen = QlxSymbol.lparen + 1;
+QlxSymbol.colon = QlxSymbol.rparen + 1;
+QlxSymbol.semi = QlxSymbol.colon + 1;
+QlxSymbol.arrow = QlxSymbol.semi + 1;
+QlxSymbol.plus = QlxSymbol.arrow + 1;
+QlxSymbol.minus = QlxSymbol.plus + 1;
+QlxSymbol.times = QlxSymbol.minus + 1;
+QlxSymbol.divide = QlxSymbol.times + 1;
+QlxSymbol.power = QlxSymbol.divide + 1;
+QlxSymbol.string = QlxSymbol.power + 1;
+QlxSymbol.integer = QlxSymbol.string + 1;
+QlxSymbol.real = QlxSymbol.integer + 1;
+QlxSymbol.complex = QlxSymbol.real + 1;
+QlxSymbol.bar = QlxSymbol.complex + 1;
+QlxSymbol.less = QlxSymbol.bar + 1;
+QlxSymbol.great = QlxSymbol.less + 1;
+QlxSymbol.barrier = QlxSymbol.great + 1;
+QlxSymbol.reset = QlxSymbol.barrier + 1;
+QlxSymbol.creg = QlxSymbol.reset + 1;
+QlxSymbol.gate = QlxSymbol.creg + 1;
+QlxSymbol['if'] = QlxSymbol.gate + 1;
+QlxSymbol.include = QlxSymbol['if'] + 1;
+QlxSymbol.measure = QlxSymbol.include + 1;
+QlxSymbol.opaque = QlxSymbol.measure + 1;
+QlxSymbol.qreg = QlxSymbol.opaque + 1;
+QlxSymbol.CX = QlxSymbol.qreg + 1;
+QlxSymbol.U = QlxSymbol.CX + 1;
+QlxSymbol.OPENQASM = QlxSymbol.U + 1;
+QlxSymbol.pi = QlxSymbol.OPENQASM + 1;
+QlxSymbol.sin = QlxSymbol.pi + 1;
+QlxSymbol.cos = QlxSymbol.sin + 1;
+QlxSymbol.tan = QlxSymbol.cos + 1;
+QlxSymbol.exp = QlxSymbol.tan + 1;
+QlxSymbol.ln = QlxSymbol.exp + 1;
+QlxSymbol.sqrt = QlxSymbol.ln + 1;
 
-Symbol.exprKeys = {
-  'pi':Symbol.pi,
-  'sin':Symbol.sin,
-  'cos':Symbol.cos,
-  'tan':Symbol.tan,
-  'exp':Symbol.exp,
-  'ln':Symbol.ln,
-  'sqrt':Symbol.sqrt};
-Symbol.tokens = [
+QlxSymbol.exprKeys = {
+  'pi':QlxSymbol.pi,
+  'sin':QlxSymbol.sin,
+  'cos':QlxSymbol.cos,
+  'tan':QlxSymbol.tan,
+  'exp':QlxSymbol.exp,
+  'ln':QlxSymbol.ln,
+  'sqrt':QlxSymbol.sqrt};
+QlxSymbol.tokens = [
   "none",
   "$",
   "eol",
@@ -96,42 +96,42 @@ Symbol.tokens = [
   "<",
   ">"
 ];
-Symbol.tkn_names = {
-  "none":Symbol.none,
-  "$":Symbol.empty,
-  "eol":Symbol.eol,
-  "sym":Symbol.sym,
-  "==":Symbol.equal,
-  ",":Symbol.comma,
-  "[":Symbol.lbrak,
-  "]":Symbol.rbrak,
-  "{":Symbol.lbrac,
-  "}":Symbol.rbrac,
-  "(":Symbol.lparen,
-  ")":Symbol.rparen,
-  ":":Symbol.colon,
-  ";":Symbol.semi,
-  "->":Symbol.arrow,
-  "+":Symbol.plus,
-  "-":Symbol.minus,
-  "*":Symbol.times,
-  "/":Symbol.divide,
-  "^":Symbol.power,
-  "string":Symbol.string,
-  "integer":Symbol.integer,
-  "real":Symbol.real,
-  "complex":Symbol.complex,
-  "|":Symbol.bar,
-  "<":Symbol.less,
-  ">":Symbol.great
+QlxSymbol.tkn_names = {
+  "none":QlxSymbol.none,
+  "$":QlxSymbol.empty,
+  "eol":QlxSymbol.eol,
+  "sym":QlxSymbol.sym,
+  "==":QlxSymbol.equal,
+  ",":QlxSymbol.comma,
+  "[":QlxSymbol.lbrak,
+  "]":QlxSymbol.rbrak,
+  "{":QlxSymbol.lbrac,
+  "}":QlxSymbol.rbrac,
+  "(":QlxSymbol.lparen,
+  ")":QlxSymbol.rparen,
+  ":":QlxSymbol.colon,
+  ";":QlxSymbol.semi,
+  "->":QlxSymbol.arrow,
+  "+":QlxSymbol.plus,
+  "-":QlxSymbol.minus,
+  "*":QlxSymbol.times,
+  "/":QlxSymbol.divide,
+  "^":QlxSymbol.power,
+  "string":QlxSymbol.string,
+  "integer":QlxSymbol.integer,
+  "real":QlxSymbol.real,
+  "complex":QlxSymbol.complex,
+  "|":QlxSymbol.bar,
+  "<":QlxSymbol.less,
+  ">":QlxSymbol.great
 };
-Symbol.prototype.toString = function ()
+QlxSymbol.prototype.toString = function ()
 {
   return this.token;
 };
-Symbol.prototype.isEOL = function()
+QlxSymbol.prototype.isEOL = function()
 {
-  return this.symbol === Symbol.eol;
+  return this.symbol === QlxSymbol.eol;
 };
 class LexErr extends Error
 {
@@ -205,13 +205,13 @@ class QDeskLexer
 {
   /**
    * Construct the QDeskLexer object and open the passed input file.  The primary method is next_token(), which returns a
-   * sequence of PL/0 TerminalSymbols (@see TerminalSymbol) lexed from the input.
+   * sequence of PL/0 TerminalQlxSymbols (@see TerminalQlxSymbol) lexed from the input.
    * @throws FileNotFoundException if the input file cannot be opened
    */
   constructor(inp, cmt)  // throws FileNotFoundException
   {
-    this.Symbol = Symbol;
-    this.prv = new this.Symbol(this.Symbol.none);  // previous token for semicolon insertion
+    this.QlxSymbol = QlxSymbol;
+    this.prv = new this.QlxSymbol(this.QlxSymbol.none);  // previous token for semicolon insertion
     this.fs = require('fs');
     if (arguments.length < 1)
       throw new Error('QDeskLexer contruction requires an input file name');
@@ -238,9 +238,9 @@ class QDeskLexer
   }
   semiInsert()
   {
-    return !(this.ltk.symbol === this.Symbol.semi ||
-        this.ltk.symbol === this.Symbol.lbrac ||
-        this.ltk.symbol === this.Symbol.rbrac);
+    return !(this.ltk.symbol === this.QlxSymbol.semi ||
+        this.ltk.symbol === this.QlxSymbol.lbrac ||
+        this.ltk.symbol === this.QlxSymbol.rbrac);
   }
 
   /**
@@ -285,7 +285,7 @@ class QDeskLexer
     // {
     //   if (this.lka != 0)
     //     throw new Error('logic: lookahead not empty on semi insertion');
-    //   this.ltk = new this.Symbol(this.Symbol.semi);
+    //   this.ltk = new this.QlxSymbol(this.QlxSymbol.semi);
     //   this.lka = _ch;
     //   return QDeskLexer.SEM;
     // }
@@ -450,16 +450,16 @@ class QDeskLexer
    * input.  The decision is either 1) accumulate the character as part of the token being scanned, 2) stop scanning and
    * return the next token.  The next input character is the "lookahead" character.  Sometimes, the decision can be made without
    * scanning the next character.  Sometimes, the next character is scanned and not accumulated, and remains to be used
-   * in the next call to the lexer. Each call to the lexer, first skips any white space.  Then Symbol of the next
+   * in the next call to the lexer. Each call to the lexer, first skips any white space.  Then QlxSymbol of the next
    * character is examined. if it is a letter, the next token may be a variable name or a keyword, If it is a digit, the
    * next token may be a number.  Otherwise, the token may be single or multiple character language operator.  The lexer
    * loops, accumulating input characters until it is able to determine the next token, which is then returned as a
-   * TerminalSymbol.  The token character string is available from the token() method.  The lexer also supports one token
+   * TerminalQlxSymbol.  The token character string is available from the token() method.  The lexer also supports one token
    * symbol pushback.  A caller may call the lexer and receive a token, then decide that it needs to push the token back so
    * that it will be returned again on the next call to the lexer.  The lexer closes the input file and throws LexEOF when
    * the input is exhausted.  If a caller ends lex'ing before EOF, the caller should call the lexer close() method.
    *
-   * @return {Symbol} a terminal symbol representing the next input token
+   * @return {QlxSymbol} a terminal symbol representing the next input token
    * @throws LexEOF on input end-of-file
    * @throws LexErr on an invalid token sequence or IOException
    */
@@ -485,34 +485,34 @@ class QDeskLexer
         _ch = this.next();
         if (_ch !== QDeskLexer.EQ)
           throw new Error("lexerr: unrecognized token:'" + QDeskLexer.EQ + _ch + '\' at ' + String(this.linenumber) + ':' + String(this.position));
-        this.ltk = new this.Symbol(this.Symbol.equal);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.equal);
         break;
       case QDeskLexer.PLU:
-        this.ltk = new this.Symbol(this.Symbol.plus);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.plus);
         break;
       case QDeskLexer.MUL:
-        this.ltk = new this.Symbol(this.Symbol.times);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.times);
         break;
       case QDeskLexer.POW:
-        this.ltk = new this.Symbol(this.Symbol.power);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.power);
         break;
       case QDeskLexer.DSH:
         _ch = this.next();
         if (_ch !== QDeskLexer.GT)
         {
           this.lookahead(_ch);
-          this.ltk = new this.Symbol(this.Symbol.minus);
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.minus);
         }
         else
         //throw new Error("lexerr: unrecognized token:'" + QDeskLexer.DSH + _ch + '\' at ' + String(this.linenumber) + ':' + String(this.position));
-          this.ltk = new this.Symbol(this.Symbol.arrow);
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.arrow);
         break;
       case QDeskLexer.SLS:
         _ch = this.next();
         if (_ch !== QDeskLexer.SLS)
         {
           this.lookahead(_ch);
-          this.ltk = new this.Symbol(this.Symbol.divide);
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.divide);
           break;
         }
         // throw new Error("lexerr: unrecognized token:'" + QDeskLexer.SLS + _ch + '\' at ' + String(this.linenumber) + ':' + String(this.position));
@@ -536,46 +536,46 @@ class QDeskLexer
         _scn = true;
         continue;
       case QDeskLexer.CM:
-        this.ltk = new this.Symbol(this.Symbol.comma);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.comma);
         break;
       case QDeskLexer.EMP:
-        this.ltk = new this.Symbol(this.Symbol.empty);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.empty);
         break;
       case QDeskLexer.LK:
-        this.ltk = new this.Symbol(this.Symbol.lbrak);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.lbrak);
         break;
       case QDeskLexer.RK:
-        this.ltk = new this.Symbol(this.Symbol.rbrak);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.rbrak);
         break;
       case QDeskLexer.LB:
-        this.ltk = new this.Symbol(this.Symbol.lbrac);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.lbrac);
         break;
       case QDeskLexer.RB:
-        this.ltk = new this.Symbol(this.Symbol.rbrac);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.rbrac);
         break;
       case QDeskLexer.LP:
-        this.ltk = new this.Symbol(this.Symbol.lparen);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.lparen);
         break;
       case QDeskLexer.RP:
-        this.ltk = new this.Symbol(this.Symbol.rparen);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.rparen);
         break;
       case QDeskLexer.CLN:
-        this.ltk = new this.Symbol(this.Symbol.colon);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.colon);
         break;
       case QDeskLexer.BAR:
-        this.ltk = new this.Symbol(this.Symbol.bar);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.bar);
         break
       case QDeskLexer.LESS:
-        this.ltk = new this.Symbol(this.Symbol.less);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.less);
         break;
       case QDeskLexer.GREAT:
-        this.ltk = new this.Symbol(this.Symbol.great);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.great);
         break;
       case QDeskLexer.SEM:
-        this.ltk = new this.Symbol(this.Symbol.semi);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.semi);
         break;
       case QDeskLexer.NL:
-        this.ltk = new this.Symbol(this.Symbol.eol);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.eol);
         break;
       case QDeskLexer.CR:
         if (!this.interactive)
@@ -584,7 +584,7 @@ class QDeskLexer
           if (_id !== QDeskLexer.NL)
             this.lookahead(_id);
         }
-        this.ltk = new this.Symbol(this.Symbol.eol);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.eol);
         break;
       case QDeskLexer.EOF:
         try
@@ -595,7 +595,7 @@ class QDeskLexer
         {
           throw new LexErr(iox.message + ' at ' + String(this.linenumber) + String(this.position));
         }
-        this.ltk = new this.Symbol(this.Symbol.none);
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.none);
         break;
       default:
         _nfd = true;
@@ -618,7 +618,7 @@ class QDeskLexer
       //     this.tkn.push(_id);
       //     _id = this.next();
       //   }
-      //   this.ltk = new this.Symbol(this.Symbol.string, this.tkn.join(''), true);
+      //   this.ltk = new this.QlxSymbol(this.QlxSymbol.string, this.tkn.join(''), true);
       //   // console.log('lex:%s', this.ltk.toString());
       //   return this.ltk;
       // }
@@ -630,7 +630,7 @@ class QDeskLexer
         {
           if (QDeskLexer.G1 === QDeskLexer.gateName1[_ch])
           {
-            this.ltk = new this.Symbol(this.Symbol.gate, _ch);
+            this.ltk = new this.QlxSymbol(this.QlxSymbol.gate, _ch);
             return this.ltk;
           }
           _tk = _ch;
@@ -640,20 +640,20 @@ class QDeskLexer
           {
             if (undefined !== QDeskLexer.gateName2[_tk + _ch])
             {
-              this.ltk = new this.Symbol(this.Symbol.gate, _tk + _ch);
+              this.ltk = new this.QlxSymbol(this.QlxSymbol.gate, _tk + _ch);
               return this.ltk;
             }
             else if (QDeskLexer.G12 === QDeskLexer.gateName1[_tk])
             {
               this.lookahead(_ch);
-              this.ltk = new this.Symbol(this.Symbol.gate, _tk);
+              this.ltk = new this.QlxSymbol(this.QlxSymbol.gate, _tk);
               return this.ltk;
             }
           }
           else
           {
             this.lookahead(_ch);
-            this.ltk = new this.Symbol(this.Symbol.gate, _tk);
+            this.ltk = new this.QlxSymbol(this.QlxSymbol.gate, _tk);
             return this.ltk;
           }
         }
@@ -665,10 +665,10 @@ class QDeskLexer
         }
         this.lookahead(_ch);
         _id = this.tkn.join('');
-        if (undefined !== this.Symbol.exprKeys[_id])
-          this.ltk = new this.Symbol(this.Symbol[_id], _id);
+        if (undefined !== this.QlxSymbol.exprKeys[_id])
+          this.ltk = new this.QlxSymbol(this.QlxSymbol[_id], _id);
         else
-          this.ltk = new this.Symbol(this.Symbol.ident, _id);
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.ident, _id);
         // console.log('lex:%s', this.ltk.toString());
         return this.ltk;
       }
@@ -689,7 +689,7 @@ class QDeskLexer
         {
           // an imaginary number
           this.tkn.push(_ch);
-          this.ltk = new this.Symbol(this.Symbol.complex, '0+'+ this.tkn.join(''));
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.complex, '0+'+ this.tkn.join(''));
           return this.ltk;
         }
         else if (_ch === QDeskLexer.PLU || _ch === QDeskLexer.DSH)
@@ -706,7 +706,7 @@ class QDeskLexer
           {
             _tk.push(_ch);
             // a complex number
-            this.ltk = new this.Symbol(this.Symbol.complex, this.tkn.join('') + _tk.join(''));
+            this.ltk = new this.QlxSymbol(this.QlxSymbol.complex, this.tkn.join('') + _tk.join(''));
             this.lka = 0;
             return this.ltk;
           }
@@ -717,11 +717,11 @@ class QDeskLexer
           this.lookahead(_ch);
         if (_dl === 0)
         {
-          this.ltk = new this.Symbol(this.Symbol.integer, this.tkn.join(''));
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.integer, this.tkn.join(''));
           // console.log('lex:%s', this.ltk.toString());
           return this.ltk;
         }
-        this.ltk = new this.Symbol(this.Symbol.real, this.tkn.join(''));
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.real, this.tkn.join(''));
         // console.log('lex:%s', this.ltk.toString());
         return this.ltk;
       }
@@ -871,21 +871,21 @@ QDeskLexer.gateName2 = {
 //     tfil = 'qdesk_test' + String(ix) + '.txt';
 //     console.log('---test file:%s---', tfil)
 //     lex = new QDeskLexer(tfil);
-//     compiler = new QDeskCompile(lex, Symbol);
+//     compiler = new QDeskCompile(lex, QlxSymbol);
 //     compiler._pgm();
 //     console.log('---compilation complete---')
 //     //console.log(compiler.pgm.toString());
 //     // sym = lex.next_token();
-//     // while (sym.symbol != Symbol.eol && sym.symbol != Symbol.none)
+//     // while (sym.symbol != QlxSymbol.eol && sym.symbol != QlxSymbol.none)
 //     // {
 //     //   console.log(sym.toString());
 //     //   sym = lex.next_token();
 //     // }
-//     // compiler = new QASMCompile(lex, sym.Symbol);
+//     // compiler = new QASMCompile(lex, sym.QlxSymbol);
 //     // compiler._qasm_program();
 //     // console.log('---Progam toString()---')
 //     // console.log(compiler.pgm.toString());
 //   }
 // }
 module.exports.QDeskLexer = QDeskLexer;
-module.exports.Symbol     = Symbol;
+module.exports.QlxSymbol  = QlxSymbol;

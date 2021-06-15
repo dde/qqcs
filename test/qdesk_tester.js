@@ -84,7 +84,7 @@ let tt, tc, tst, tstout, assert, fai, util;
     tc = require('./test_cases.js');
     interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt: cfg.ualt, test:true, interactive:true});
     lex = new ql.QDeskLexer('interactive', interp.getCommentProcessor());
-    compiler = new qq.QDeskCompile(lex, ql.Symbol, interp);
+    compiler = new qq.QDeskCompile(lex, ql.QlxSymbol, interp);
     fail = 0;
     for (ix = 0; ix < tc.test_cases.length; ++ix)
     {
@@ -105,7 +105,7 @@ let tt, tc, tst, tstout, assert, fai, util;
         assert.notStrictEqual(tstout, undefined);
         assert.strictEqual(tstout.join(''), tst.expect);
         tkn = lex.next_token();
-        assert.strictEqual(ql.Symbol.none === tkn.symbol || ql.Symbol.eol === tkn.symbol, true,
+        assert.strictEqual(ql.QlxSymbol.none === tkn.symbol || ql.QlxSymbol.eol === tkn.symbol, true,
             util.format('error (line end) symbol %s', tkn.toString()));
       }
       catch (e)
@@ -124,15 +124,15 @@ let tt, tc, tst, tstout, assert, fai, util;
       tfil = cfg.files[ix];
       process.stdout.write('---test file:' + tfil + '---\n')
       lex = new ql.QDeskLexer(tfil, interp.getCommentProcessor());
-      compiler = new qq.QDeskCompile(lex, ql.Symbol, interp);
+      compiler = new qq.QDeskCompile(lex, ql.QlxSymbol, interp);
       stmt = compiler._stmt();
       while (null != stmt)
       {
         interp.exec(stmt);
         tkn = lex.next_token();
-        if (ql.Symbol['none'] === tkn.symbol)
+        if (ql.QlxSymbol['none'] === tkn.symbol)
           break;
-        if (ql.Symbol['eol'] !== tkn.symbol)
+        if (ql.QlxSymbol['eol'] !== tkn.symbol)
         {
           process.stdout.write('logic error symbol ' + tkn.toString() + '\n');
           break;
