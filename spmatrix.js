@@ -390,24 +390,33 @@ class SpMatrix
     sel = sci.next();
     while (!(tel.done || sel.done))
     {
-      if ((tel.value[RW] === sel.value[RW]) && (tel.value[CL] === sel.value[CL]))
+      if (tel.value[CL] > sel.value[CL])
       {
-        p.addccf(tel.value[VL].sum(sel.value[VL]), tel.value[RW], tel.value[CL]);
-        tel = tci.next();
+        p.addccf(sel.value[VL], sel.value[RW], sel.value[CL]);
         sel = sci.next();
+      }
+      else  if (tel.value[CL] < sel.value[CL])
+      {
+        p.addccf(tel.value[VL], tel.value[RW], tel.value[CL]);
+        tel = tci.next();
       }
       else
       {
-        if (tel.value[CL] > sel.value[CL])
+        if (tel.value[RW] > sel.value[RW])
+        {
+          p.addccf(sel.value[VL], sel.value[RW], sel.value[CL]);
           sel = sci.next();
-        else if (tel.value[CL] < sel.value[CL])
+        }
+        else if (tel.value[RW] < sel.value[RW])
+        {
+          p.addccf(tel.value[VL], tel.value[RW], tel.value[CL]);
           tel = tci.next();
+        }
         else
         {
-          if (tel.value[RW] > sel.value[RW])
-            sel = sci.next();
-          else
-            tel = tci.next();
+          p.addccf(tel.value[VL].sum(sel.value[VL]), tel.value[RW], tel.value[CL]);
+          tel = tci.next();
+          sel = sci.next();
         }
       }
     }
@@ -426,10 +435,10 @@ class SpMatrix
   }
   sumeq(s) {
     let p = this.sum(s);
-    s.spm[0] = p.spm[0];
-    s.spm[1] = p.spm[1];
-    s.spm[2] = p.spm[2];
-    return s;
+    this.spm[0] = p.spm[0];
+    this.spm[1] = p.spm[1];
+    this.spm[2] = p.spm[2];
+    return this;
   }
   conjugate(sc) {
     let cln, ix;
@@ -642,14 +651,14 @@ class SpMatrix
   }
   disp() {
     let ix, jx, str, dsp, cln, d1 = this._rows, d2 = this._cols;
-    cln = this.rebuild();
+    // cln = this.rebuild();
     dsp = new Array(d1);
     for (ix = 0; ix < d1; ++ix)
     {
       str = new Array(d2);
       for (jx = 0; jx < d2; ++jx)
       {
-        str[jx] = cln.sub(ix, jx).disp();
+        str[jx] = this.sub(ix, jx).disp();
       }
       dsp[ix] = str.join(' ');
     }
@@ -794,9 +803,8 @@ SpMatrix.configReplaceZeroes = false;
 SpMatrix.setReplaceZeroes = function (flg) {
   if (typeof flg === 'boolean')
     SpMatrix.configReplaceZeroes = flg;
-}
-/*
-(function() {
+};
+/*(function() {
   let m1, m2, ms, v, rmj, ix, jx;
   // m1 = qq.Quantum.buildCNOT(3, 0, 2);
   // console.log("CNOT 302\n%s", m1.disp());
@@ -877,7 +885,7 @@ SpMatrix.setReplaceZeroes = function (flg) {
         rmj[ix][jx] = new Complex(ix * 4 + jx);
       }
     }
-    v = new cc.CMatrix(rmj[0], rmj[1], rmj[2], rmj[3]);
+    v = new CMatrix(rmj[0], rmj[1], rmj[2], rmj[3]);
     console.log("test\n%s", v.disp());
     return [new SpMatrix(v), v];
   }
@@ -925,15 +933,26 @@ SpMatrix.setReplaceZeroes = function (flg) {
     // console.log(ms.toString());
   }
   function testSum() {
-    let ms, sm, cm;
+    let ms, sm, cm, cln;
     ms = testMatrix();
-    sm = ms[0].sum(ms[0]);
-    console.log(sm.toString());
-    console.log('rebuild sum:\n%s', sm.rebuild().disp());
-    sm = ms[0];
-    sm.sumeq(ms[0]);
-    console.log(sm.toString());
-    console.log('rebuild sumeq:\n%s', sm.rebuild().disp());
+    cln = ms[0].clone();
+    cln.sub(0, 1, new Complex(0));
+    cln.sub(0, 2, new Complex(0));
+    cln.sub(0, 3, new Complex(0));
+    cln.sub(1, 0, new Complex(0));
+    cln.sub(2, 0, new Complex(0));
+    cln.sub(3, 0, new Complex(0));
+    console.log('plus:\n%s', cln.disp());
+    sm = ms[0].sum(cln);
+    console.log('A+B sum toString:\n%s', sm.toString());
+    console.log('A+B sum:\n%s', sm.disp());
+    sm = cln.sum(ms[0]);
+    console.log('B+A sum toString:\n%s', sm.toString());
+    console.log('B+A sum:\n%s', sm.disp());
+    sm = ms[0].clone();
+    sm.sumeq(cln);
+    console.log('sumeq toString:\n%s', sm.toString());
+    console.log('sumeq:\n%s', sm.disp());
     // console.log(ms.toString());
   }
   function testTensorProd() {
@@ -985,7 +1004,8 @@ SpMatrix.setReplaceZeroes = function (flg) {
     console.log('rebuild CNOT(2,0,1):\n%s', gat.rebuild().disp());
     return gat;
   }
-  testBuildCNOT(2, 0, 1);
+  // testBuildCNOT(2, 0, 1);
+  testSum();
 })();*/
 
 exports.SpMatrix = SpMatrix;
