@@ -271,7 +271,9 @@ Complex.prototype.disp = function() {
   if (Math.abs(this.imag) >= Complex.tolerance)
   {
     if (1.0 === this.imag)
-      str += 'i';
+    {
+      str += (str.length === 0) ? 'i' : '+i';
+    }
     else if (-1.0 === this.imag)
       str += '-i';
     else
