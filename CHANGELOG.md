@@ -26,5 +26,7 @@
 - [**#13**](https://github.com/dde/qqcs/issues/13) Fixed in V1.3.2
 ## [**1.3.4**](https://github.com/dde/qqcs/issues?milestone=18&state=closed)
 - [**#18**](https://github.com/dde/qqcs/issues/18) V1.3.4 Enhancements
-## [**1.3.5**](https://github.com/dde/qqcs/issues?milestone=18&state=closed)
+## [**1.3.5**](https://github.com/dde/qqcs/issues?milestone=22&state=closed)
 - [**#22**](https://github.com/dde/qqcs/issues/22) (termination fail) fixed in v1.3.5
+## [**1.3.6**](https://github.com/dde/qqcs/issues?milestone=23&state=closed)
+- [**#23**](https://github.com/dde/qqcs/issues/23) (matrix addition, etc) fixed in v1.3.6
