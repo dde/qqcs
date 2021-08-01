@@ -30,3 +30,7 @@
 - [**#22**](https://github.com/dde/qqcs/issues/22) (termination fail) fixed in v1.3.5
 ## [**1.3.6**](https://github.com/dde/qqcs/issues?milestone=23&state=closed)
 - [**#23**](https://github.com/dde/qqcs/issues/23) (matrix addition, etc) fixed in v1.3.6
+## [**1.4.0**](https://github.com/dde/qqcs/issues?milestone=14&state=closed)
+- [**#14**](https://github.com/dde/qqcs/issues/14) redesign compiler right-recursion
+## [**1.4.0**](https://github.com/dde/qqcs/issues?milestone=24&state=closed)
+- [**#18**](https://github.com/dde/qqcs/issues/24) V1.4.0 Enhancements

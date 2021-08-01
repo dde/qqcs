@@ -74,7 +74,7 @@ let cfg = {
   ualt:false,
   flags:{k:'kdisp', t:'trace', s:'sparse', u:'ualt'}
 };
-let tt, tc, tst, tstout, assert, fai, util;
+let tc, tst, tstout, assert, fail, util;
   configReplaceZeroes = cfg.rzeroes
   cmdArgs(cfg, usage);
   if (0 === cfg.files.length)
@@ -82,6 +82,7 @@ let tt, tc, tst, tstout, assert, fai, util;
     assert = require('assert').strict;
     util = require('util');
     tc = require('./test_cases.js');
+    // tc = require('./one_test_case.js');
     interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt: cfg.ualt, test:true, interactive:true});
     lex = new ql.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, ql.QlxSymbol, interp);

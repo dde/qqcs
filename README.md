@@ -1,5 +1,35 @@
 # QQCS - Quick Quantum Circuit Simulation
 
+Table of Contents
+=================
+
+* [Installation](#installation)
+* [Overview](#overview)
+* [Introduction](#introduction)
+* [QQCS Statement Detail](#qqcs-statement-detail)
+* [Available Gates](#available-gates)
+* [Rotational Gates](#rotational-gates)
+* [Permutation Gates](#permutation-gates)
+* [Oracles](#oracles)
+* [Gate Positioning and Replication](#gate-positioning-and-replication)
+* [Controlled Gate Names](#controlled-gate-names)
+* [Display](#display)
+* [Measurement](#measurement)
+* [Initial Values](#initial-values)
+* [Initial Value Tensor Products](#initial-value-tensor-products)
+* [Factoring](#factoring)
+* [Custom Gates](#custom-gates)
+* [Comments](#comments)
+* [Interactive help](#interactive-help)
+* [Conclusion](#conclusion)
+* [Version Notes](#version-notes)
+* [QQCS Linear Notation Syntax](#qqcs-linear-notation-syntax)
+  * [Meta-symbols](#meta-symbols)
+  * [Grammar](#grammar)
+* [References](#references)
+
+## Installation
+
 QQCS is installed with the Node Package Manager.  First, install NodeJS.  Then, at the command line, enter:
 
 ```npm install qqcs```
@@ -28,11 +58,11 @@ that are not immediately available in quantum programming systems.
 
 QQCS contains all these features.  It is an educational tool for first and second courses in Quantum Computing.
 
-QQCS can also be used by the quantum experimentalist.  It can test the operation of quantum circuits step by step,
+QQCS can also be used by the quantum experimentalist.  It can test the operation of a quantum circuit step by step,
 displaying the output of each step as a quantum state, an equivalent gate, or a measure of one or more qubits,
 and it can quickly run through alternatives.
 
-Although QQCS is "one more thing to learn", it is designed to be an intuitive character reprentation of a
+Although QQCS is "one more thing to learn", it is designed to be an intuitive character representation of a
 quantum circuit, using familiar gate names and quantum notation, drawing on existing concepts so that the
 learning is minimal.
 
@@ -48,7 +78,7 @@ The following gate sequence \[6\] may or may not implement a controlled Hadamard
 
 <img src="img/Screen Shot 2020-05-03 at 3.41.56 PM.png" alt="equivalent gate sequence for a controlled Hadamard gate"/>
 
-QQCS answers the question with a single intereactive statement.  The \[ 1\] is the line number prompt.
+QQCS answers the question with a single interactive statement.  The \[ 1\] is the line number prompt.
 
 ```
 [ 1] :_H:_Sa:Cx:_H:_T:Cx:_T:_H:_S:_X:S_
@@ -64,9 +94,9 @@ Although first two diagonal elements should be 1, it looks like a factor of ```c
 
 ## QQCS Statement Detail
 
-Circuit steps syntactically begin with a colon (:) and combine gates, given their standard names, with ungated
-qubit lines indicated by underscores (_), in sequence from the top to the bottom of the lines in the circuit.
-The first step in the example, :_H, is a Hadamard gate with an ungated line above it, in a two-line circuit.
+Circuit steps syntactically begin with a colon (```:```) and combine gates, given their standard names, with ungated
+qubit lines indicated by underscores (```_```), in sequence from the top to the bottom of the lines in the circuit.
+The first step in the example, ```:_H```, is a Hadamard gate with an ungated line above it, in a two-line circuit.
 
 Gates with common adjoint gates use the upper case letter name for the gate, and the lower case letter "a" following
 the upper case letter as the name for the adjoint gate.
@@ -78,7 +108,7 @@ control line (or lines) followed by the target line, so :C01 is a CNOT with cont
 Control and target lines are relative to the span of the controlled gate, so "_" prefixes and suffixes do not
 change the numbering of the controls and target.
 
-## Basic Available Gates
+## Available Gates
 
 <table>
 <tr><th colspan="2">1-Qubit</th><th colspan="2">2-Qubit</th></tr>
@@ -88,7 +118,7 @@ change the numbering of the controls and target.
 <tr><td>Kp(𝜃)</td><td>Phase gate (universal set) [4] </td><td>Sw</td><td>general Swap (used with a 2-digit control suffix)</td></tr>
 <tr><td>Rp(𝜃)</td><td>Rotation gate (universal set) [4]</td><th colspan="2">3-Qubit</th></tr>
 <tr><td>Rx(𝜃)</td><td>Pauli X rotation gate</td><td>Fr</td><td>general Fredkin gate (used with a 3-digit control suffix)</td></tr>
-<tr><td>Ry(𝜃)</td><td>Pauli Y rotation gate</td><td>Tf</td><td>general Toffoli gate (used with a 3-digit control suffix)</td></tr>
+<tr><td>Ry(𝜃)</td><td>Pauli Y rotation gate</td><td>Tf</td><td>general Toffoli gate (used with a 3 (or more) digit control suffix)</td></tr>
 <tr><td>Rz(𝜃)</td><td>Pauli Z rotation gate</td><th colspan="2">n-Qubit</th></tr>
 <tr><td>S </td><td>S gate (π/2 phase gate)</td><td>Im</td><td>Mean Inversion (used with 1-digit size suffix)</td></tr>
 <tr><td>Sa </td><td>S adjoint</td><td>Qa</td><td>Inverse Quantum Fourier Transform (used with 1-digit size suffix)</td></tr>
@@ -104,7 +134,7 @@ change the numbering of the controls and target.
 ## Rotational Gates
 
 All the rotational gates specify the angle parameters as factors of π radians, with π implicit.
-Thus, Rx(.5) is an X-axis rotation of π/2 radians, or 90 degrees.  The parameter range for all angles is [0,4).
+Thus, Rx(.5) is an X-axis rotation of π/2 radians, or 90 degrees.  The parameter range for all angles is ```[0,4)```.
 
 The U gate may have 1, 2, or 3 parameters.  ```U(λ) = U(0,0,λ) = Rz(λ)```, ```U(𝜙,λ) = U(π/2,𝜙,λ)```, and ```U(𝜃,𝜙,λ)```.
 The U gate implements the general unitary matrix
@@ -126,6 +156,47 @@ simplify the elements of some rotational gates.  The definition is:
 cos(𝜃/2)        -exp(iλ)sin(𝜃/2)
 exp(i𝜙)sin(𝜃/2)  exp(i(𝜙+λ))cos(𝜃/2)
 ```
+## Permutation Gates
+
+Permutation gates are matrices with a single 1 in each row and column and 0's in all other elements.  The CNOT gate is
+a typical permutation gate. When applied to a quantum state, permutation gates shift the amplitudes from one basis
+vector to another
+
+A permutation gate is specified with the syntax
+```:P(pair, ...)n```.  Each pair is a real number, but it is interpreted as a pair of integers separated by a period.
+Thus, 2.6 is the pair 2 -> 6, specifying that the amplitude for basis vector ```|010>``` becomes the amplitude for basis vector
+```|110>```.  The gate ```:P(2.6,6.2)3``` will exchange the amplitudes of those two basis vectors. The CNOT gate specified
+as a permutation is ```:P(2.3,3.2)2```.  The n suffix is the qubit size of the permutation gate.
+
+A permutation gate starts as an identity gate.  The permutation ```a.b``` is applied by setting the element ```(a,a)``` to 0, then
+setting the element ```(a,b)``` to 1. After the permutations are applied, QQCS will verify that the result is valid.  A
+permutation gate is a unitary matrix.  If the gate is symmetric, it is Hermitian and therefore its own adjoint.  Otherwise,
+its adjoint is the reverse permutation.
+
+The specification of a permutation gate is tedious. The simplest way to use one is to specify it once and assign it
+to a custom gate, then reuse the custom gate as needed.
+
+## Oracles
+
+Oracles are available for the well-known algorithms of Deutsch, Deutsch and Josza, Bernstein and Vazirani, and Simon.
+
+The oracles are specified with the syntax ```:Ox(p)n```.  The ```x``` is ```d``` for Deutsch and Deutsch-Josza which are,
+distinguished by their qubit size, ```b``` for Bernstein-Vazirani, and ```s``` for Simon.  The optional parameter ```p```
+is specific to the oracle and determines whether the oracle will implement a random function or a function determined by
+the parameter. The ```n``` suffix is the qubit size and must be specified.  The qubit size includes any ancilla qubits.
+
+```:Od2``` is considered the Deutsch oracle, and any larger qubit size is the Deutsch-Josza oracle.  Both algorithms use
+a single ancilla qubit, and the random function is either a constant or balanced binary function of domain size ```n-1```.
+If the optional parameter is specified, a value of 0 generates a constant function whose values are all 0.  A value of 1
+generates a constant function whose values are all 1.  Any other value generates a balanced function.
+
+```:Obn``` is the Bernstein-Vazirani oracle.  The algorithm uses a single ancilla qubit, and the function implements 
+a hidden binary string of size ```n-1```. If the optional parameter is specified, it determines the hidden string and
+should be a value between ```0``` and ```n-1```.
+
+```:Osn``` is the Simon oracle.  The algorithm uses ```n/2``` ancilla qubits, and the function implements a binary string
+of size ```n/2``` representing the "period" \[5\] of the function, which is discovered by the Simon algorithm. If the optional
+parameter is specified, it determines the "period" and should be a value between ```0``` and ```(n/2)-1```.
 
 ## Gate Positioning and Replication
 
@@ -133,12 +204,12 @@ Ungated lines (\_) have already been mentioned.  They may be repeated as many ti
 qubit restriction) to position a gate on the correct line.  For example, :\_\_X\_\_ designates an X-gate on line
 2 in a 5-qubit circuit.
 
-Gates may be repeated across adjacent lines by using a 1-digit suffix replicator.  For example, :\_\_X3 designates
+Gates may be repeated across adjacent lines by using a 1-digit suffix replicator.  For example, ```:__X3``` designates
 a circuit step created from the tensor product of 2 Identity gates on lines 0 and 1, and 3 X-gates on lines 2, 3, 4
 of a 5-qubit circuit.  The replication is only applicable to single-qubit gates, and uses only a single digit.
-As an alternative, the gate name can be repeated. :HHHH is the same as :H4.
+As an alternative, the gate name can be repeated. ```:HHHH``` is the same as ```:H4```.
 
-Non-adjacent gates are handled by infixed underscores (\_), such as :\_X\_X, which puts two X gates on lines 1 and 3
+Non-adjacent gates are handled by infixed underscores (```_```), such as ```:_X_X```, which puts two X gates on lines 1 and 3
 of a 4-qubit circuit.
 
 ## Controlled Gate Names
@@ -155,12 +226,14 @@ and indicates a control on relative line 0 and a target on relative line 2.
 Ungated prefixes and suffixes are used, as in all other gates, to position the gate vertically in the circuit.
 Lines within the span that are not control or target lines are ungated by implication.
 
-With a absolute suffix, the control and target digits indicate the actual lines of the circuit.  No leading
-\_'s are needed for positioning.  Trailing \_'s may still be needed.
+With an absolute suffix, the control and target digits indicate the actual lines of the circuit.  No leading
+```_```'s are needed for positioning.  Trailing ```_```'s may still be needed.
 
 Either absolute or relative notation may be used.
 
 Any single qubit gate can be followed by a control suffix to make it a controlled gate.
+
+A Toffoli gate may have more than two control qubits.
 
 ## Display
 
@@ -281,7 +354,7 @@ In interactive mode, it is possible to set switch controls by preceding the swit
 
 When the $name appears in a comment, the switch is toggled.
 
-### Interactive help
+### Interactive Help
 
     The keyword $gate[s] immediately following the hash character in an interactive comment will display a short
     help regarding the available gates.
@@ -298,9 +371,15 @@ not available from quantum computer simulated execution.
 
 It can be executed in interactive or batch mode.
 
-QQCS is available through the NodeJS Package Manager, npm, and is executed using NodeJS.
+## Version Notes
 
-## Notes on Version 1.3.0
+### Notes on Version 1.4.0
+    * Added extended controls (more than two) to the Toffoli gate 
+    * Added permutation gates
+    * Added oracles for the Deutsch, Deutsch-Josza, Bernstein-Vazirani, and Simon algorithms
+    * Improved compiler-generator for handling tail recursion
+
+### Notes on Version 1.3.0
 
     * An alternate general unitary matrix definition is available with the -u flag on start-up, or with the $ualt
       interactive comment flag
@@ -317,11 +396,11 @@ QQCS is available through the NodeJS Package Manager, npm, and is executed using
         * the number of qubits in the circuit will be taken as the maximum size of the circuit, unless overridden by trailing _'s
     * Control suffixes are allowed on all single qubit gates
 
-### Fixes
+#### Fixes
 
     * When a non-zero element of a matrix was set to zero, the sparse matrix structure was corrupted.
 
-## Notes on Version 1.2.0
+### Notes on Version 1.2.0
 
 Version 1.2.0 introduces several upward incompatibilities in order to expand the set of gates supported and to
 simplify the syntax:
@@ -333,7 +412,7 @@ simplify the syntax:
     * In prior versions, factoring at the end of a custom gate assignment was displayed but did not affect the
       assigned gate matrix.  It now does.
 
-New features in version 1.2.0 include:
+#### New features in version 1.2.0 include:
 
     * Rx(𝜃), Ry(𝜃), and Rz(𝜃) rotation gates
     * U(𝜃,𝜙,λ), general rotation gate (U1, U2, and U3) based on a three parameter general 2x2 unitary matrix 
@@ -383,7 +462,7 @@ New features in version 1.2.0 include:
 [4] E. Rieffel and W. Polak (2011) Quantum Computing, A Gentle Introduction. MIT Press, Cambridge, Massachusetts; London, England.
 [5] R. S. Sutor (2019) Dancing With Qubits. Birmingham, UK, Packt Publishing.
 [6] A. Cross, L. Bishop, J. Smolin, J. Gambetta (2017). Open Quantum Assembly Language. retrieve https://arxiv.org/pdf/1707.03429.pdf.
-[7] IBM, the Quantum Experience web site (2019) retrieve http://quantumexperience.ng.bluemix.net/.
+[7] IBM, the Quantum Experience web site (2019) retrieve https://quantumexperience.ng.bluemix.net/.
 [8] The QISKit SDK for Quantum Software Development (2019). retrieve https://github.com/QISKit.
 [9] QPIC (2018) Creating quantum circuit diagrams in TikZ. retrieve https://github.com/qpic/qpic.
 ```

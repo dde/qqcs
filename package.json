@@ -1,6 +1,6 @@
 {
   "name": "qqcs",
-  "version": "1.3.6",
+  "version": "1.4.0",
   "description": "Quick Quantum Circuit Simulation",
   "main": "qdesk.js",
   "scripts": {
@@ -41,5 +41,5 @@
   "bugs": {
     "url": "https://github.com/dde/qqcs/issues"
   },
-  "homepage": "https://github.com/dde/qqcs#readme"
+  "homepage": "https://github.com/dde/qqcs#README.md"
 }
