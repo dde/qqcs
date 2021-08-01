@@ -252,12 +252,12 @@ static public void main(String[] args)
       cgen = new CodeGen(ll1, cg, pw, opt);
       cgen.generate(ll1.compileCode);
       cg.close();
+      pw.println(String.format("\ncode written to %s", opt.getCodeFile()));
     }
     catch (Exception fnfx)
     {
-      pw.println(fnfx.getMessage());
+      pw.println(fnfx.getClass().getName() + ": " + fnfx.getMessage());
     }
-    pw.println(String.format("\ncode written to %s", opt.getCodeFile()));
   }
   pw.flush();
 }
