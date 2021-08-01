@@ -122,24 +122,48 @@ Quantum.buildCNOT = function (qbits, ctl, tgt)
   }
   return gat;
 };
-Quantum.buildToffoli = function (qbits, ctl1, ctl2, tgt) {
+Quantum.buildToffoli = function (qbits, ctl, tgt) {
   let sz, ix, jx, gat, bas;
-  if (qbits < 3 || qbits > Quantum.qubits || ctl1 < 0 || ctl1 >= qbits || ctl2 < 0 || ctl2 >= qbits || tgt < 0 || tgt >= qbits)
-    throw new Error('argument range error - 3 <= qubits <= 8, 0 <= lines < qubits');
+  function verify(qb, arr, tg) {
+    let ix, jx, mx, vl;
+    if (tg >= qb)
+      return false;
+    mx = tg;
+    for (ix = 0; ix < arr.length; ++ix)
+    {
+      vl = arr[ix];
+      if (vl === tg)
+        return false;
+      for (jx = ix - 1; jx >= 0; --jx)
+      {
+        if (vl === arr[jx])
+          return false;
+      }
+      if (mx < vl)
+        mx = vl;
+    }
+    return true;
+  }
+  function allset(bas, lst) {
+    let ix;
+    for (ix = 0; ix < lst.length; ++ix)
+    {
+      if (bas[lst[ix]] === '0')
+        return false;
+    }
+    return true;
+  }
+  if (qbits < ctl.length + 1 || qbits > Quantum.qubits)
+    throw new Error('Toffoli argument range error - 3 <= qubits <= ' + String(Quantum.qubits));
+  if (!verify(qbits, ctl, tgt))
+    throw new Error('Toffoli circuit line error');
   sz = Math.pow(2, qbits);
   gat = new Matrix(sz, sz);
-  // for (ix = 0; ix < sz; ++ix)
-  // {
-  //   for (jx = 0; jx < sz; ++jx)
-  //   {
-  //     gat.sub(ix, jx, Quantum.ZERO);
-  //   }
-  // }
   for (ix = 0; ix < sz; ++ix)
   {
     bas = (+ix).toString(2);
     bas = '0'.repeat(qbits - bas.length) + bas;
-    if (bas[ctl1] === '1' && bas[ctl2] === '1')
+    if (allset(bas, ctl))
     {
       bas = bas.split('');
       bas[tgt] = (bas[tgt] === '0') ? '1' : '0';
@@ -178,7 +202,10 @@ Quantum.buildIn = function (n) {
   let nI, ix;
   if (n < 1 || n > Quantum.qubits)
     throw new Error('argument range error - tensor power valid range: 1 <= n <= 8');
-  nI = Quantum.iGate;
+  if (1 === n)
+    nI = Quantum.iGate.clone();
+  else
+    nI = Quantum.iGate;
   for (ix = 2; ix <= n; ++ix)
   {
     nI = Quantum.iGate.tensorprod(nI);
@@ -257,7 +284,7 @@ Quantum.buildQFT = function (qbits) {
  * @param qv - the basis vector value, from 0 <= qv < 2^qubits
  */
 Quantum.buildBasis = function(qbits, qv) {
-  let qb, ix, b;
+  let qb, ix;
   if (qbits < 1 || qbits > Quantum.qubits)
     throw new Error('argument range error 1 <= qubits <=' + Quantum.qubits);
   ix = Math.pow(2, qbits);
@@ -402,7 +429,7 @@ Quantum.buildRx = function (ph) {
  * @param gat the one qubit gate to be controlled (a Matrix)
  */
 Quantum.buildControlled = function (qbits, ctl, tgt, gat) {
-  let ix, jx, spn, q0, q1, n, ket, cg, ll, qs;
+  let ix, jx, q0, q1, n, ket, cg, ll, qs;
   if (!(gat instanceof Matrix) || 2 !== gat.rows() || 2 !== gat.columns())
     throw new Error('gate to be controlled must be 2x2 Matrix');
   q0 = gat.prod(Quantum.q0);
@@ -570,124 +597,6 @@ Quantum.probabilities = function (q) {
  *             bits should be ordered from left to right in circuit order top to bottom
  * @param q the quantum state to be measured
  */
-Quantum.measureX = function (mask, q) {
-  function binString(qbs) {
-    let bin, sz, ix, str;
-    sz = Math.pow(2, qbs);
-    bin = [];
-    for (ix = 0; ix < sz; ++ix)
-    {
-      str = (ix).toString(2);
-      str = '0'.repeat(qbs - str.length) + str;
-      // while (str.length < qbs)
-      // {
-      //   str = '0' + str;
-      // }
-      bin.push(str);
-    }
-    return bin;
-  }
-  let sz, qb, ix, jx, m, rv, bin, zro, one, prob, prob0, prob1, rtn;
-  let rws = q.rows(), cols = q.columns();
-  if (1 === rws)
-  {
-    rv = true;
-    sz = cols;
-  }
-  else if (1 === cols)
-  {
-    rv = false;
-    sz = rws;
-  }
-  else
-    throw new Error('argument q must be a row or column vector');
-  ix = 2;
-  qb = 1;
-  while (ix < sz)
-  {
-    qb += 1;
-    ix = 2 * ix;
-  }
-  if (ix !== sz)
-    throw new Error('argument q length must be a power of 2');
-  if (qb > Quantum.qubits)
-    throw new Error('argument range error 1 <= qubits <= ' + Quantum.qubits);
-  bin = binString(qb);  // a string of basis vectors of size qb, eg. qb=2, ['00', '01', '10', '11']
-  prob0 = [];  // unselected probabilities
-  prob1 = [];  // selected probabilities
-  for (jx = 0; jx < qb; ++jx)
-  {
-    // for each qubit, selected or not
-    if ('1' === mask.charAt(jx))
-      prob = prob1;
-    else
-      prob = prob0;
-    zro = one = 0;
-    for (ix = 0; ix < sz; ++ix)
-    {
-      if (rv)
-        m = q.sub(0, ix).mag();
-      else
-        m = q.sub(ix, 0).mag();
-      // m is the magnitude of the ix'th coeffcient of the quantum state
-      if ('0' === bin[ix].charAt(jx))
-      {
-        zro += m * m;
-      }
-      else
-      {
-        one += m * m;
-      }
-    }
-    prob.push([jx, zro, one]);
-  }
-  rtn = [[], []];
-  if (0 < prob1.length)
-  {
-    qb = [];
-    bin = binString(prob1.length);
-    for (ix = 0; ix < bin.length; ++ix)
-    {
-      m = 1.0;
-      for (jx = 0; jx < bin[ix].length; ++jx)
-      {
-        if ('0' === bin[ix].charAt(jx))
-        {
-          m *= prob1[jx][1];
-        }
-        else
-        {
-          m *= prob1[jx][2];
-        }
-      }
-      qb.push(bin[ix] + ':' + Complex.format(m, 3));
-    }
-    rtn[0] = qb;
-  }
-  if (0 < prob0.length)
-  {
-    qb = new Matrix(Math.pow(2, prob0.length), 1);
-    bin = binString(prob0.length);
-    for (ix = 0; ix < bin.length; ++ix)
-    {
-      m = 1.0;
-      for (jx = 0; jx < bin[ix].length; ++jx)
-      {
-        if ('0' === bin[ix].charAt(jx))
-        {
-          m *= Math.sqrt(prob0[jx][1]);
-        }
-        else
-        {
-          m *= Math.sqrt(prob0[jx][2]);
-        }
-      }
-      qb.sub(ix, 0, new Complex(m, 0));
-    }
-    rtn[1] = qb;
-  }
-  return rtn;
-};
 Quantum.measure = function(mask, q) {
   function binString(qbs) {
     let bin, sz, ix, str;
@@ -718,7 +627,7 @@ Quantum.measure = function(mask, q) {
   function cc(a, b) {
     return (a < b) ? -1 : ((a > b) ? 1 : 0);
   }
-  let sz, qb, ix, jx, m, rv, bin, zro, one, prob, prob0, prob1, rtn, bs;
+  let sz, qb, ix, m, rv, bin, prob0, prob1, rtn, bs;
   let rws = q.rows(), cols = q.columns();
   if (1 === rws)
   {

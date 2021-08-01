@@ -1,7 +1,6 @@
 /**
  * Created by danevans on 4/4/20.
  */
-let qq = require('./quantum.js');
 class LogicErr extends Error
 {
   constructor(msg) {
@@ -17,6 +16,7 @@ class LogicErr extends Error
 class QDeskInterpret
 {
   constructor(cfg) {
+    let qq = require('./quantum.js');
     if (undefined === QDeskInterpret.single)
     {
       QDeskInterpret.single = this;
@@ -191,11 +191,280 @@ class QDeskInterpret
   {
     this.test_out.push(line);
   }
+  buildPermutationMatrix(op, qb) {
+    let n, sz, ix, pm, prs;
+    function scan(str) {
+      let cr, st, ln, ch, fs, lft, rgt, pairs;
+      fs = lft = rgt = -1;
+      pairs = [];
+      cr = st = 0;
+      ln = str.length;
+      scn:
+          while (cr < ln)
+          {
+            ch = str.charAt(cr);
+            switch (st)
+            {
+            case 0: // scanning for left paren
+              if (ch === '(')
+                st = 1;
+              break;
+            case 1: // first digit of left pair
+              if (ch >= '0' && ch <= '9')
+              {
+                fs = cr;
+                st = 2;
+              }
+              else
+                throw new Error(`state ${st} found ${ch} when expecting digit`);
+              break;
+            case 2: // period of pair
+              if (ch === '.')
+              {
+                lft = parseInt(str.substring(fs, cr));
+                st = 3;
+              }
+              else if (ch === ',')
+              {
+                lft = parseInt(str.substring(fs, cr));
+                rgt = 0;
+                pairs.push([lft, rgt]);
+                st = 1;
+              }
+              else if (ch === ')')
+              {
+                lft = parseInt(str.substring(fs, cr));
+                rgt = 0;
+                pairs.push([lft, rgt]);
+                st = 5;
+              }else if (ch < '0' || ch > '9')
+                throw new Error(`state ${st} found ${ch} when expecting digit or period`);
+              break;
+            case 3: // first digit of right pair
+              if (ch >= '0' && ch <= '9')
+              {
+                fs = cr;
+                st = 4;
+              }
+              else
+                throw new Error(`state ${st} found ${ch} when expecting digit`);
+              break;
+            case 4: // comma or right paren of pair
+              if (ch === ',')
+              {
+                rgt = parseInt(str.substring(fs, cr));
+                pairs.push([lft, rgt]);
+                st = 1;
+              }
+              else if (ch === ')')
+              {
+                rgt = parseInt(str.substring(fs, cr));
+                pairs.push([lft, rgt]);
+                st = 5;
+                break scn;
+              }
+              else if (ch < '0' || ch > '9')
+                throw new Error(`found ${ch} when expecting digit, comma, or right paren`);
+              break;
+            }
+            cr += 1;
+          }
+      if (st !== 5)
+        throw new Error(`state ${st} is not correct termination state`);
+      return pairs;
+    }
+    pm = this.Quantum.buildIn(qb);  /* n-qubit Identity matrix */
+    prs = scan(op);
+    sz = pm.rows();
+    n = prs.length;
+    for (ix = 0; ix < n; ++ix)
+    {
+      if (prs[ix][0] >= sz || prs[ix][1] >= sz)
+        throw new Error(`permutation reference (${prs[ix][0]},${prs[ix][1]}) out of range`);
+      pm.sub(prs[ix][0], prs[ix][0], this.Quantum.ZERO);
+      pm.sub(prs[ix][0], prs[ix][1], this.Quantum.ONE);
+    }
+    return pm;
+  }
+  /*
+   * A Deutsch Oracle is basically a permutation matrix.  For each basis vector in a |x,y> n-qubit column matrix,
+   * where x is the first n-1 bits and y is the last bit, it computes f(x), where f is either a constant or a
+   * balanced function, and computes y xor f(x).  If the result is equal to y, no permutation occurs, otherwise
+   * the two bases, ...0 and ...1 are swapped.
+ */
+  buildDeutschOracle(qb, t) {
+    let constant, sz, val, ix, jx, cv, icv, oracle, zero, one;
+    if (qb < 2)
+      throw new Error('number of qubits must be >= 2 for Deutsch oracle');
+    sz = Math.pow(2, qb - 1);
+    val = new Array(sz);
+    constant = Math.random() <= .5;
+    cv = Math.floor(Math.random() + .5);
+    if (t !== undefined)
+    {
+      if (t === 0 || t === 1)
+      {
+        constant = true;
+        cv = t;
+      }
+      else
+        constant = false;
+    }
+    icv = Math.abs(cv - 1);
+    for (ix = 0; ix < val.length; ++ix)
+    {
+      val[ix] = cv;
+    }
+    if (!constant)
+    {
+      ix = 0;
+      while (ix < val.length / 2)
+      {
+        jx = Math.floor(Math.random() * val.length);
+        while (val[jx] === icv)
+        {
+          if (++jx === val.length)
+            jx = 0;
+        }
+        val[jx] = icv;
+        ++ix;
+      }
+    }
+    // console.log('val:%s', val);
+    oracle = this.Quantum.buildIn(qb);  /* n-qubit Identity matrix */
+    zero = this.Quantum.ZERO;
+    one = this.Quantum.ONE;
+    for (ix = 0; ix < val.length; ++ix)
+    {
+      if (1=== val[ix])
+      {
+        jx = 2 * ix;
+        oracle.sub(jx, jx, zero);
+        oracle.sub(jx + 1, jx + 1, zero);
+        oracle.sub(jx, jx + 1, one);
+        oracle.sub(jx + 1, jx, one);
+      }
+    }
+    return oracle;
+  }
+  /*
+ * A Bernstein-Vazirani Oracle, like Deutsch, is a permutation matrix.  For each basis vector in a |x,y>
+ * n-qubit column matrix, where x is the first n-1 bits and y is the last bit, it computes f(x), where
+ * f is the dot product of a hidden string s of length n-1 and x.  The result of the dot product is applied
+ * as y xor f(x).  If the result is equal to y, no permutation occurs, otherwise
+ * the two bases, ...0 and ...1 are swapped.
+ */
+  buildBernsteinOracle(n, t) {
+    let sz, s, ix, jx, oracle, zero, one;
+    function permute(x, s) {
+      let r, ix;
+      r = 0;
+      for (ix = 0; ix < s.length; ++ix)
+      {
+        if (x[ix] === '1' && s[ix] === '1')
+          r += 1;
+      }
+      return (r % 2) === 1;
+    }
+    if (n < 2)
+      throw new Error('number of qubits must be >= 2 for Bernstein-Vazirani oracle');
+    sz = Math.pow(2, n - 1);
+    ix = Math.floor(Math.random() * sz);
+    if (t !== undefined && (t >= 0 && t < sz))
+    {
+      ix = Math.floor(t);
+    }
+    s = Number(ix).toString(2);
+    s = '0'.repeat(n - 1 - s.length) + s;
+    oracle = this.Quantum.buildIn(n);  /* n-qubit Identity matrix */
+    zero = this.Quantum.ZERO;
+    one = this.Quantum.ONE;
+    for (ix = 0; ix < sz; ++ix)
+    {
+      jx = Number(ix).toString(2);
+      jx = '0'.repeat(n - 1 - jx.length) + jx;
+      if (permute(jx, s))
+      {
+        jx = 2 * ix;
+        oracle.sub(jx, jx, zero);
+        oracle.sub(jx + 1, jx + 1, zero);
+        oracle.sub(jx, jx + 1, one);
+        oracle.sub(jx + 1, jx, one);
+      }
+    }
+    return oracle;
+  }
+  buildSimonOracle(n, t) {
+    let sz, v, ix, jx, n2, fx, zero, one, oracle;
+    function simonFunction(n, t) {
+      let sz, vs, v, fx, r, xt, ix, jx;
+      function  xorTableBin(n) {
+        let tbl, sz;
+        sz = Math.pow(2, n);
+        tbl = new Array(sz);
+        for (ix = 0; ix < sz; ++ix)
+        {
+          tbl[ix] = new Array(sz);
+          for (jx = 0; jx < sz; ++jx)
+          {
+            tbl[ix][jx] = ix ^ jx;
+          }
+        }
+        return tbl;
+      }
+      sz = Math.pow(2, n);
+      fx = new Array(sz);
+      r = Math.floor(Math.random() * (sz - 1)) + 1;
+      if (t !== undefined)
+        r = t
+      xt = xorTableBin(n);
+      vs = [];
+      for (ix = 0; ix < fx.length; ++ix)
+      {
+        if (fx[ix] !== undefined)
+          continue;
+        jx = 0;
+        v = sz;
+        while (jx >= 0)
+        {
+          if (t === undefined) // generate random function unless t has been specified
+            v = Math.floor(Math.random() * sz);
+          else
+            v = v - 1;
+          jx = vs.indexOf(v)
+        }
+        vs.push(v);
+        jx = xt[ix].indexOf(r);
+        if (jx < 0)
+          throw new Error(`logic:${r} not found in xor table row ${ix}`);
+        fx[ix] = v;
+        fx[jx] = v;
+      }
+      return fx;
+      }
+    if (n < 2 || (n % 2 !== 0))
+      throw new Error('number of qubits must be even and >= 2 for Simon oracle');
+    n2 = n / 2;
+    sz = Math.pow(2, n2);
+    fx = simonFunction(n2, t);
+    oracle = this.Quantum.buildIn(n);  /* n-qubit Identity matrix */
+    zero = this.Quantum.ZERO;
+    one = this.Quantum.ONE;
+    for (ix = 0; ix < sz; ++ix)
+    {
+      jx = ix << n2;
+      v = jx ^ fx[ix];
+      oracle.sub(jx, jx, zero);
+      oracle.sub(v, v, zero);
+      oracle.sub(jx, v, one);
+      oracle.sub(v, jx, one);
+    }
+    return oracle;
+  }
   analyze_opcode(gat) {
     let bas, ph, sf, op, c1, c2, t1;
     let opc;
-    function tpower(pwr, mt)
-    {
+    function tpower(pwr, mt) {
       let pw, ct, op = null;
       pw = parseInt(pwr);
       if (pw < 2)
@@ -230,6 +499,24 @@ class QDeskInterpret
       }
       return op;
     }
+    function ver_tf(arr, tg) {
+      let ix, jx, mx, vl;
+      mx = tg;
+      for (ix = 0; ix < arr.length; ++ix)
+      {
+        vl = arr[ix];
+        if (vl === tg)
+          throw new Error('Toffoli lines must be unique');
+        for (jx = ix - 1; jx >= 0; --jx)
+        {
+          if (vl === arr[jx])
+            throw new Error('Toffoli lines must be unique');
+        }
+        if (mx < vl)
+          mx = vl;
+      }
+      return mx;
+    }
     opc = gat.opcode;
     if (undefined !== this.inst_set[opc])
       return;
@@ -240,12 +527,17 @@ class QDeskInterpret
     {
     case 'Kp':
     case 'Rp':
-    case 'Tp':
     case 'Rx':
     case 'Ry':
     case 'Rz':
+    case 'Tp':
       if (ph.length !== 1)
         throw new Error('gate ' + bas + ' requires 1 angular parameter');
+      break;
+    case 'Ob':
+    case 'Od':
+    case 'Os':
+    case 'P':
       break;
     case 'U':
       if (ph.length < 1 || ph.length > 3)
@@ -315,7 +607,6 @@ class QDeskInterpret
       op = this.Quantum.buildSwap(t1, c1, c2);
       break;
     case 'Fr':
-    case 'Tf':
       if (0 !== sf.length)
       {
         if (3 !== sf.length)
@@ -330,10 +621,26 @@ class QDeskInterpret
         c2 = 1;
         t1 = 2;
       }
-      if ('Tf' === bas)
-        op = this.Quantum.buildToffoli(Math.max(c1, c2, t1) + 1, c1, c2, t1);
+      op = this.Quantum.buildFred(Math.max(c1, c2, t1) + 1, c1, c2, t1);
+      break;
+    case 'Tf':
+      if (0 !== sf.length)
+      {
+        // if (3 !== sf.length)
+        //   throw new Error('opcode ' + opc + ' is unknown');
+        c1 = [];
+        for (t1 = 0; t1 < sf.length; ++t1)
+        {
+          c1.push(parseInt(sf.charAt(t1)));
+        }
+        t1 = c1.pop();
+      }
       else
-        op = this.Quantum.buildFred(Math.max(c1, c2, t1) + 1, c1, c2, t1);
+      {
+        c1 = [0, 1];
+        t1 = 2;
+      }
+      op = this.Quantum.buildToffoli(ver_tf(c1, t1) + 1, c1, t1);
       break;
     case 'M':
       return;
@@ -360,6 +667,34 @@ class QDeskInterpret
     case 'Rz':
       op = this.Quantum.buildRz(ph[0] * Math.PI);
       op = suffix(this, sf, op, opc);
+      break;
+    case 'Ob':
+      if (1 !== sf.length)
+        throw new Error(opc + ' missing qubit size');
+      c1 = parseInt(sf.charAt(0));
+      c2 = (ph.length > 0) ? ph[0] : undefined;
+      op = this.buildBernsteinOracle(c1, c2);
+      break;
+    case 'Od':
+      if (1 !== sf.length)
+        throw new Error(opc + ' missing qubit size');
+      c1 = parseInt(sf.charAt(0));
+      c2 = (ph.length > 0) ? ph[0] : undefined;
+      op = this.buildDeutschOracle(c1, c2);
+      break;
+    case 'Os':
+      if (1 !== sf.length)
+        throw new Error(opc + ' missing qubit size');
+      c1 = parseInt(sf.charAt(0));
+      c2 = (ph.length > 0) ? ph[0] : undefined;
+      op = this.buildSimonOracle(c1, c2);
+      break;
+    case 'P':
+      if (1 !== bas.length)
+        throw new Error(opc + ' unimplemented');
+      if (1 !== sf.length)
+        throw new Error(opc + ' missing qubit size');
+      op = this.buildPermutationMatrix(opc, parseInt(sf.charAt(0)));
       break;
     case 'U':
       if (1 === ph.length)
@@ -523,7 +858,7 @@ class QDeskInterpret
     {
       qst = [stmt.vector];
       sq = stmt.next;
-      while (null != sq && sq instanceof Qubit)
+      while (null !== sq && sq instanceof Qubit)
       {
         qst.push(sq.vector);
         sq = sq.next;
@@ -533,14 +868,14 @@ class QDeskInterpret
     {
       sq = stmt;
     }
-    if (null != sq)
+    if (null !== sq)
     {
       if (sq instanceof NamedGate)
       {
         ng = sq;
         sq = sq.next;
       }
-      while (null != sq.next)
+      while (null !== sq.next)
       {
         if (!(sq instanceof Gate))
           throw new Error('logic: not Gate object in Gate sequence');
@@ -558,7 +893,7 @@ class QDeskInterpret
         pgm.push(sq.opcode);
       }
     }
-    if (ng != null)
+    if (ng !== null)
     {
       eq = this.run(pgm, null, {trace: false, kdisp: false});
       // this.base_set[ng.name] = eq;
@@ -578,7 +913,7 @@ class Operand
   {
     this._opcode = op;
     this._next = null;
-    this._oprs = null;  // filled in by instructions that have an operand list
+    // this._oprs = null;  // filled in by instructions that have an operand list
   }
   get opcode()
   {
