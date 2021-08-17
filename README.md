@@ -178,14 +178,16 @@ to a custom gate, then reuse the custom gate as needed.
 
 ## Oracles
 
-Oracles are available for the well-known algorithms of Deutsch, Deutsch and Josza, Bernstein and Vazirani, and Simon.
+Oracles are available for the well-known algorithms of Deutsch, Deutsch and Jozsa, Bernstein and Vazirani, Simon
+and Grover.
 
-The oracles are specified with the syntax ```:Ox(p)n```.  The ```x``` is ```d``` for Deutsch and Deutsch-Josza which are,
-distinguished by their qubit size, ```b``` for Bernstein-Vazirani, and ```s``` for Simon.  The optional parameter ```p```
+The oracles are specified with the syntax ```:Ox(p)n```.  The ```x``` is ```d``` for Deutsch and Deutsch-Jozsa which are,
+distinguished by their qubit size, ```b``` for Bernstein-Vazirani, ```s``` for Simon, and ```g``` for Grover.
+The optional parameter ```p```
 is specific to the oracle and determines whether the oracle will implement a random function or a function determined by
 the parameter. The ```n``` suffix is the qubit size and must be specified.  The qubit size includes any ancilla qubits.
 
-```:Od2``` is considered the Deutsch oracle, and any larger qubit size is the Deutsch-Josza oracle.  Both algorithms use
+```:Od2``` is considered the Deutsch oracle, and any larger qubit size is the Deutsch-Jozsa oracle.  Both algorithms use
 a single ancilla qubit, and the random function is either a constant or balanced binary function of domain size ```n-1```.
 If the optional parameter is specified, a value of 0 generates a constant function whose values are all 0.  A value of 1
 generates a constant function whose values are all 1.  Any other value generates a balanced function.
@@ -197,6 +199,10 @@ should be a value between ```0``` and ```n-1```.
 ```:Osn``` is the Simon oracle.  The algorithm uses ```n/2``` ancilla qubits, and the function implements a binary string
 of size ```n/2``` representing the "period" \[5\] of the function, which is discovered by the Simon algorithm. If the optional
 parameter is specified, it determines the "period" and should be a value between ```0``` and ```(n/2)-1```.
+
+```:Ogn``` is the Grover oracle.  The oracle negates the phase of one basis vector of the n-qubit input quantum state.
+If the optional parameter is specified, it determines which basis vector is
+negated and should be a value between ```0``` and ```n-1```.
 
 ## Gate Positioning and Replication
 
@@ -350,14 +356,16 @@ In interactive mode, it is possible to set switch controls by preceding the swit
     kdisp - display quantum states in ket notation (default is transposed column vector)
     trace - display the resulting quantum state (or equivalent matrix) at each step of the quantum circuit
     ualt - use the alternate definition of a general 1-qubit unitary matrix
-    none - reset all switches
+    rzeroes - replace zeroe values with periods in matrix displays for readability
+    ocache - cache oracles once they are generated
+    none - reset all switches, and clear the instruction cache
 
 When the $name appears in a comment, the switch is toggled.
 
 ### Interactive Help
 
     The keyword $gate[s] immediately following the hash character in an interactive comment will display a short
-    help regarding the available gates.
+    help regarding the available gates.  The keyword $help will display a list of comment switches.
 
 ## Conclusion
 
@@ -372,6 +380,10 @@ not available from quantum computer simulated execution.
 It can be executed in interactive or batch mode.
 
 ## Version Notes
+### Notes on Version 1.4.1
+    * Add the Grover oracle
+    * Add the oracle cacheing switch ocache
+    * Redesign the configuration processing
 
 ### Notes on Version 1.4.0
     * Added extended controls (more than two) to the Toffoli gate 
