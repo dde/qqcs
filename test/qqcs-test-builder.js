@@ -67,11 +67,24 @@ class Reader
 }
 class Texp
 {
-  constructor(fs, fil, ofil)
+  constructor(fs, path, fil, ofil)
   {
     this.rdr = new Reader(fs, fil, ofil);
+    this.backup(fs, path, ofil);
     this.writeq = [];
     this.draining = false;
+  }
+  backup(fs, path, nam) {
+    let bkn,
+        stat,
+        pth = path.parse(nam);
+    bkn = path.resolve(pth.dir, pth.name + '-1' + pth.ext);
+    stat = fs.statSync(bkn, {throwIfNoEntry:false}); // return undefined if doesn't exist
+    if (undefined !== stat)
+      fs.rmSync(bkn);
+    stat = fs.statSync(nam, {throwIfNoEntry:false});
+    if (undefined !== stat)
+      fs.renameSync(nam, bkn);
   }
   writeExpect(id, cmd, lines) {
     let ix;
@@ -98,7 +111,7 @@ class Texp
     this.write('  },\n');
   }
   trimComments(ln) {
-    let mtch, ix;
+    let mtch;
     mtch = ln.match(/^(\s*#[^\\]*\\n)/);
     while (null !== mtch)
     {
@@ -109,7 +122,7 @@ class Texp
   }
   exec()
   {
-    let line, rw, ix, jx, id;
+    let line, id;
     let mtch, cmd, lines;
     line = this.rdr.read_line();
     this.write('exports.test_cases = [\n');
@@ -124,7 +137,7 @@ class Texp
       else if (null != (mtch = line.match(/^---test file/)))
       {
       }
-      else if (null != (mtch = line.match(/^\[ *(\d+)\] *(.*)/)))
+      else if (null != (mtch = line.match(/^\[ *(\d+)] *(.*)/)))
       {
         if (0 < lines.length)
         {
@@ -200,8 +213,8 @@ class Texp
   }
 }
 let texp;
-// texp = new Texp(fs, 'xtestout.txt', 'xtest_cases.js');
-texp = new Texp(fs, 'qdesk_testout.txt', 'test_cases.js');
+// texp = new Texp(fs, path, 'xtestout.txt', 'xtest_cases.js');
+texp = new Texp(fs, path, 'qdesk_testout.txt', 'test_cases.js');
 texp.exec();
 texp.flush();
 console.log('completed');

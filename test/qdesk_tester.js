@@ -61,6 +61,13 @@ function cmdArgs(config, usage) {
   }
   return true;
 }
+function setFlags(cfg, flgs) {
+  let prp;
+  for (prp in flgs)
+  {
+    cfg[prp] = flgs[prp];
+  }
+}
 let ql = require('../qdesk_lexer.js'),
     qq = require('../qdesk_compile.js'),
     qi = require('../qdesk_interpret.js');
@@ -70,20 +77,24 @@ let cfg = {
   files:[],
   kdisp:false,
   trace:false,
-  sparse:false,
+  // sparse:false,
   ualt:false,
-  flags:{k:'kdisp', t:'trace', s:'sparse', u:'ualt'}
+  ocache: false,
+  rzeroes: false,
+  none:'',
+  flags:{k:'kdisp', t:'trace', s:'sparse', u:'ualt', o: 'ocache', r: 'rzeroes'}
 };
 let tc, tst, tstout, assert, fail, util;
-  configReplaceZeroes = cfg.rzeroes
   cmdArgs(cfg, usage);
   if (0 === cfg.files.length)
   {
+    cfg.test = true;
+    cfg.interactive = true;
     assert = require('assert').strict;
     util = require('util');
     tc = require('./test_cases.js');
     // tc = require('./one_test_case.js');
-    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt: cfg.ualt, test:true, interactive:true});
+    interp = new qi.QDeskInterpret(cfg);
     lex = new ql.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, ql.QlxSymbol, interp);
     fail = 0;
@@ -94,9 +105,9 @@ let tc, tst, tstout, assert, fail, util;
       {
         lex.setSourceLine(tst.stmt);
         if (undefined !== tst.flags)
-          interp.setFlags(tst.flags);
+          setFlags(cfg, tst.flags);
         // else
-        //   interp.clearFlags();
+        //   clearFlags();
         stmt = compiler._stmt();
         if (null !== stmt)
         // assert.notStrictEqual(stmt, null);
@@ -119,7 +130,9 @@ let tc, tst, tstout, assert, fail, util;
   }
   else
   {
-    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt: cfg.ualt, interactive:false});
+    cfg.test = false;
+    cfg.interactive = false;
+    interp = new qi.QDeskInterpret(cfg);
     for (ix = 0; ix < cfg.files.length; ++ix)
     {
       tfil = cfg.files[ix];
