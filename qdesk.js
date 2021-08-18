@@ -3,13 +3,14 @@
  */
 (function() {
   function usage() {
-    console.log("usage: node %s [-i] [-t] [-k] [-r] [-h] [input-files]", 'qdesk.js');
-    console.log("  i - interactive mode");
-    console.log("  t - trace circuit steps");
+    console.log("usage: node %s [-c] [-i] [-t] [-k] [-r] [-u] [-h] [input-files]", 'qdesk.js');
+    console.log("  c - cache oracles when generated");
+    console.log("  h - display this help");
+    console.log("  i - interactive mode (implied with no files, otherwise batch mode)");
     console.log("  k - use ket display when circuit initial value is provided");
-    console.log("  u - use alternate unitary matrix definition for unitary gates");
-    console.log("  r - replace zero elements (0) in sparse matrices with periods (.) for better readability");
-    console.log("  h - or no parameters displays this help");
+    console.log("  r - replace zero elements (0) in sparse matrix displays with periods (.) for better readability");
+    console.log("  t - trace circuit steps");
+    console.log("  u - use alternate unitary matrix definition for U, Rx, Ry, Rz gates");
     console.log("  input-files - zero or more input QDesk statement files");
     process.exit(1);
   }
@@ -114,7 +115,7 @@
   let lex, compiler, interp, stmt;
   let tt, intro =
       ['Quick Quantum Circuit Simulation\n',
-        '  #$gate - display a gate summary\n',
+        '  #$gate - display a gate summary, #$help - display comment switches\n',
         '  left arrow - move cursor left;  right arrow - move cursor right\n',
         '  delete (Mac) - delete the character left of cursor and shift characters left\n',
         '  backspace (Win) - same as delete\n',
@@ -129,21 +130,27 @@
     rzeroes: false,
     help: false,
     ualt: false,
+    ocache: false,
+    none:'',
+    gate:'',
     flags: {
       i: 'interactive',
       t: 'trace',
       k: 'kdisp',
       u: 'ualt',
       r: 'rzeroes',
+      o: 'ocache',
       h: 'help'
     }
   };
   cmdArgs(cfg, usage);
   if (cfg.help)
     usage();
-  if (cfg.interactive || 0 === cfg.files.length)
+  if (0 === cfg.files.length)
+    cfg.interactive = true;
+  if (cfg.interactive)
   {
-    interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt, interactive:true, rzeroes: cfg.rzeroes});
+    interp = new qi.QDeskInterpret(cfg);
     lex = new qd.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, qd.QlxSymbol, interp);
     tt = require('./qdesk_interactive.js');
@@ -155,7 +162,7 @@
     for (ix = 0; ix < cfg.files.length; ++ix)
     {
       console.log('--- file:%s---', cfg.files[ix])
-      interp = new qi.QDeskInterpret({trace: cfg.trace, kdisp: cfg.kdisp, ualt:cfg.ualt});
+      interp = new qi.QDeskInterpret(cfg);
       lex = new qd.QDeskLexer(cfg.files[ix],  interp.getCommentProcessor());
       compiler = new qq.QDeskCompile(lex, qd.QlxSymbol, interp);
       // if (cfg.skel)
