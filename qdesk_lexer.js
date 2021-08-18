@@ -852,6 +852,7 @@ QDeskLexer.gateName2 = {
   'Im': true,
   'Ob': true,
   'Od': true,
+  'Og': true,
   'Os': true,
   'Qa': true,
   'Qf': true,
