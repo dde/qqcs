@@ -50,6 +50,8 @@ class QDeskInterpret
         this.cfg.trace = false;
       if (typeof cfg.ualt !== 'boolean')
         this.cfg.ualt = false;
+      if (typeof cfg.ocache !== 'boolean')
+        this.cfg.ocache = false;
       this.Quantum.setUMatrix(this.cfg.ualt);
       if (typeof cfg.rzeroes !== 'boolean')
         this.cfg.rzeroes = false
@@ -114,68 +116,73 @@ class QDeskInterpret
     this.cfg.ualt = false;
     this.Quantum.setUMatrix(this.cfg.ualt);
     this.cfg.rzeroes = false;
+    this.cfg.ocache = false;
     this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
   }
-  setFlags(cfg) {
-    if (undefined !== cfg.trace)
-      this.cfg.trace = Boolean(cfg.trace);
-    if (undefined !== cfg.kdisp)
-      this.cfg.kdisp = Boolean(cfg.kdisp);
-    if (undefined !== cfg.ualt)
-    {
-      this.cfg.ualt = Boolean(cfg.ualt);
-      this.Quantum.setUMatrix(this.cfg.ualt);
-    }
-    if (undefined !== cfg.rzeroes)
-    {
-      this.cfg.rzeroes = Boolean(cfg.rzeroes);
-      this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
-    }
-  }
   commentProcessor(cmt) {
-    let mch = [];
-    mch[0] = cmt.indexOf('$trace');
-    mch[1] = cmt.indexOf('$kdisp');
-    mch[2] = cmt.indexOf('$ualt');
-    mch[3] = cmt.indexOf('$none');
-    mch[4] = cmt.indexOf('$rzeroes');
-    if (-1 < mch[0])
+    let prp, sval;
+    for (prp in this.cfg)
     {
-      this.cfg.trace = !this.cfg.trace;
-    }
-    if (-1 < mch[1])
-    {
-      this.cfg.kdisp = !this.cfg.kdisp;
-    }
-    if (-1 < mch[2])
-    {
-      this.cfg.ualt = !this.cfg.ualt;
-      this.Quantum.setUMatrix(this.cfg.ualt);
-      this.inst_set = {};  // clear the cache of any previous U() definitions
-    }
-    if (-1 < mch[3])
-    {
-      this.cfg.trace = false;
-      this.cfg.kdisp = false;
-      this.cfg.ualt = false;
-      this.Quantum.setUMatrix(this.cfg.ualt);
-      this.cfg.rzeroes = false;
-      this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
-      this.inst_set = {};  // clear the cache of any previous U() definitions
-    }
-    if (-1 < mch[4])
-    {
-      this.cfg.rzeroes = !this.cfg.rzeroes;
-      //configReplaceZeroes = !configReplaceZeroes;
-      this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
-    }
-    if (this.cfg.interactive)
-    {
-      if (0 <= cmt.indexOf('$gate'))
+      sval = '$' + prp;
+      if (-1 >= cmt.indexOf(sval))
+        continue;
+      switch (prp)
       {
-        process.stdout.write('single qubit gates: _ H X Y Z I S T Sa Ta Rx(r) Ry(r) Rz(r) U(r[,r[,r]]) Kp(r) Rp(r) Tp(r)\n');
-        process.stdout.write('    r - real multiple of pi, gates may have a control suffix\n');
-        process.stdout.write('larger gates: Cx Cr Cct Swct Tfcct Imq Qfq Qaq - c control, t target, q qubits\n');
+      case 'trace':
+      case 'kdisp':
+      case 'ocache':
+        this.cfg[prp] = !this.cfg[prp];
+        if (this.cfg.interactive)
+          this.write(`${sval}==${this.cfg[prp]}\n`);
+        break;
+      case 'ualt':
+        this.cfg[prp] = !this.cfg[prp];
+        this.Quantum.setUMatrix(this.cfg[prp]);
+        this.inst_set = {};  // clear the cache of any previous U() definitions
+        if (this.cfg.interactive)
+          this.write(`${sval}==${this.cfg[prp]}\n`);
+        break;
+      case 'rzeroes':
+        this.cfg[prp] = !this.cfg[prp];
+        //configReplaceZeroes = !configReplaceZeroes;
+        this.Matrix.setReplaceZeroes(this.cfg[prp]);
+        if (this.cfg.interactive)
+          this.write(`${sval}==${this.cfg[prp]}\n`);
+        break;
+      case 'none':
+        this.cfg.trace = false;
+        this.cfg.kdisp = false;
+        this.cfg.ualt = false;
+        this.Quantum.setUMatrix(this.cfg.ualt);
+        this.cfg.rzeroes = false;
+        this.cfg.ocache = false;
+        this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
+        this.inst_set = {};  // clear the cache of any previous U() definitions
+        break;
+      case 'gate':
+        if (this.cfg.interactive)
+        {
+          this.write('single qubit gates: _ H X Y Z I S T Sa Ta Rx(r) Ry(r) Rz(r) U(r[,r[,r]]) Kp(r) Rp(r) Tp(r)\n');
+          this.write('    r - real multiple of pi, gates may have a control suffix\n');
+          this.write('larger gates: Cx Cr Cct Swct Tfcct Imq Qfq Qaq - c control, t target, q qubits\n');
+          this.write('oracles: Ob Bernstein-Vazirani, Od Deutsch-Jozsa, Og Grover, Os Simon\n');
+          this.write('    optional parameter forces behavior\n');
+        }
+        break;
+      case 'help':
+        if (this.cfg.interactive)
+        {
+          this.write('$kdisp - display in ket format\n');
+          this.write('$trace - trace quantum state after each gate\n');
+          this.write('$ualt - use alternative definition of 1-qubit unitary matrix for U, Rx, Ry, and Rz\n');
+          this.write('$rzeroes - replace 0 values with .\'s in matrix displays\n');
+          this.write('$ocache - cache random oracles once they are generated\n');
+          this.write('$none - reset all options to false and clear cache\n');
+          this.write('$gate - show a summary of all gates\n');
+        }
+        break;
+      default:
+        break;
       }
     }
   }
@@ -461,6 +468,24 @@ class QDeskInterpret
     }
     return oracle;
   }
+  /*
+   * A Grover Oracle is an identity matrix with one ennntry negated.  This inverts the phase of a random basis
+   * vector of the quantum state on which it operates.
+  */
+  buildGroverOracle(n, t) {
+    let sz, ix, oracle;
+    if (n < 1)
+      throw new Error('number of qubits must be >= 1 for Grover oracle');
+    sz = Math.pow(2, n);
+    ix = Math.floor(Math.random() * sz);
+    if (t !== undefined && (t >= 0 && t < sz))
+    {
+      ix = Math.floor(t);
+    }
+    oracle = this.Quantum.buildIn(n);  /* n-qubit Identity matrix */
+    oracle.sub(ix, ix).negateq();
+    return oracle;
+  }
   analyze_opcode(gat) {
     let bas, ph, sf, op, c1, c2, t1;
     let opc;
@@ -518,9 +543,10 @@ class QDeskInterpret
       return mx;
     }
     opc = gat.opcode;
-    if (undefined !== this.inst_set[opc])
-      return;
     bas = gat.name;
+    if (undefined !== this.inst_set[opc] && (bas.charAt(0) !== 'O' ||
+        this.cfg.ocache))  // cacheing oracles
+      return;
     sf = gat.getSuffix();
     ph = gat.getAngles();
     switch (bas)
@@ -536,6 +562,7 @@ class QDeskInterpret
       break;
     case 'Ob':
     case 'Od':
+    case 'Og':
     case 'Os':
     case 'P':
       break;
@@ -681,6 +708,13 @@ class QDeskInterpret
       c1 = parseInt(sf.charAt(0));
       c2 = (ph.length > 0) ? ph[0] : undefined;
       op = this.buildDeutschOracle(c1, c2);
+      break;
+    case 'Og':
+      if (1 !== sf.length)
+        throw new Error(opc + ' missing qubit size');
+      c1 = parseInt(sf.charAt(0));
+      c2 = (ph.length > 0) ? ph[0] : undefined;
+      op = this.buildGroverOracle(c1, c2);
       break;
     case 'Os':
       if (1 !== sf.length)
