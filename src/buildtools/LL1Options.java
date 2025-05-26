@@ -22,6 +22,13 @@ expand(String[] orig, int nwsz)
   System.arraycopy(orig, 0, exp, 0, Math.min(nwsz, orig.length));
   return exp;
 }
+static String
+optionValue(String[] args, int ix)
+{
+  if (ix >= args.length)
+    throw new IllegalArgumentException();
+  return args[ix];
+}
 LL1Options(String[] args, String usage)
 {
   int ix, incr;
@@ -37,23 +44,17 @@ LL1Options(String[] args, String usage)
     {
       if (args[ix].equals("-o"))
       {
-        if (ix + 1 >= args.length)
-          throw new IllegalArgumentException();
-        fileOutput = args[ix + 1];
+        fileOutput = optionValue(args, ix + 1);
         incr = 2;
       }
       else if (args[ix].equals("-g"))
       {
-        if (ix + 1 >= args.length)
-          throw new IllegalArgumentException();
-        codeOutput = args[ix + 1];
+        codeOutput = optionValue(args, ix + 1);
         incr = 2;
       }
       else if (args[ix].equals("-gc"))
       {
-        if (ix + 1 >= args.length)
-          throw new IllegalArgumentException();
-        className = args[ix + 1];
+        className = optionValue(args, ix + 1);
         incr = 2;
       }
       else if (args[ix].equals("-n"))
