@@ -1,0 +1,262 @@
+# register QDesk syntax (v1.5.0)
+           pgm -> stmt stmt-list eos
+           eos -> eol
+           eos -> none
+     stmt-list -> ; stmt stmt-list
+     stmt-list ->
+          stmt -> ident gate-sequence
+          stmt -> reg initial-value gate-sequence
+#          stmt -> areg initial-value gate-sequence
+ initial-value -> q-state
+ initial-value -> q-state-list
+# initial-value ->
+ gate-sequence -> g-seq-tail g-factor
+    g-seq-tail -> : gate-list g-seq-tail
+    g-seq-tail ->
+      g-factor -> / unop Complex
+      g-factor ->
+  q-state-list -> ( t-val gate-sequence ) q-state-list
+  q-state-list ->
+         t-val -> q-state
+         t-val -> reg
+       q-state -> unop v-comp p-state-tail
+ #      q-state -> reg
+  p-state-tail -> addop v-comp p-state-tail
+  p-state-tail ->
+ #        gates -> full-gate gate-list
+ #        gates -> gate-list
+     gate-list -> full-gate gate-list
+     gate-list ->
+     full-gate -> gate-name gate-suffix
+     gate-name -> gate
+     gate-name -> ident
+   gate-suffix -> gate-angle gate-repl
+#   gate-suffix ->
+    gate-angle -> ( unop Complex cmplxs )
+    gate-angle ->
+     gate-repl -> line lines
+#     gate-repl ->
+         lines -> , line lines
+         lines ->
+        cmplxs -> , unop Complex cmplxs
+        cmplxs ->
+          line -> integer reg
+#          line -> integer
+          line ->
+#          areg -> = ident
+#          areg -> reg
+           reg -> ~ ident
+           reg ->
+        v-comp -> coeff ket
+         coeff -> Complex
+         coeff ->
+           ket -> | integer >
+#           bra -> < integer |
+         Complex -> complex
+         Complex -> real
+         Complex -> integer
+#          Real -> real
+#          Real -> integer
+#           eqop -> =
+#           eqop ->
+           unop -> addop
+           unop ->
+          addop -> +
+          addop -> -
+#          unop -> -
+#          unop -> +
+#          unop ->
+#          ksym -> integer
+#          ksym -> +
+#          ksym -> -
+#          isym -> i
+#          isym ->
+
+# Terminal-mapping
+# | bar
+# > great
+# : colon
+# , comma
+# = assign
+# ~ reg
+# ; semi
+# gate gate
+# ident ident
+# complex complex
+# real real
+# integer integer
+# / divide
+# + plus
+# - minus
+# ( lparen
+# ) rparen
+# eol eol
+# none none
+# end-mapping
+
+
+#tail-recursion
+#@pgm-1
+#if (null === _rt)
+#  return null;
+#_sq = _rt;
+#@pgm-2
+#if (null !== _rt)
+#  _rt.unshift(_sq);
+#else
+#  _rt = [_sq];
+#_sv = _rt;
+#@pgm-3
+#_rt = _sv;
+#@stmt-list-1
+#_sq = [];
+#@stmt-list-2
+#_sq.push(_rt);
+#_rt = _sq;
+#@initial-value-1
+#_sv = [_rt];
+#_rt = _sv;
+#@initial-value-2
+#// unused code point
+#@stmt-1
+#_rt = [new this.exe.NamedGate(_tk.token, null), null, _rt];
+#@stmt-2
+#_sv = [_rt];
+#@stmt-3
+#_sv.push(_rt);
+#@stmt-4
+#_sv.push(_rt);
+#_rt = _sv;
+#@q-state-1
+#_sv = _rt;
+#@q-state-2
+#if (_sv)
+#  _rt.negate();
+#_sv = _rt;
+#@q-state-3
+#_rt.unshift(_sv);
+#_rt = new this.exe.Qubit(_rt);
+#@q-state-list-1
+#_sq = [];
+#@q-state-list-2
+#// _rt is a Qubit
+#_sq.push(_rt);
+#_sv = _rt;
+#@q-state-list-3
+#if (_rt != null)
+#  _sv.gate = _rt;
+#_rt = _sq;
+#@t-val-2
+#_rt = new this.exe.Qubit(_rt.valueOf());
+#@gate-sequence-1
+#_sv = _rt;
+#@gate-sequence-2
+#if (null !== _rt)
+#{
+#  if (null === _sv)
+#    throw new Error('no operand to factor');
+#  _sv.push(_rt);
+#}
+#_rt = _sv;
+#@g-seq-tail-1
+#_sq = [];
+#@g-seq-tail-2
+#_rt.finish()
+#_sq.push(_rt);
+#_rt = _sq;
+#@gate-list-1
+#_sq = null;
+#@gate-list-2
+#if (null === _sq)
+#  _sq = _rt;
+#else
+#  _sq.combine(_rt);
+#_rt = _sq;
+#@full-gate-1
+#_sv = _rt;
+#@full-gate-2
+#_rt = new this.exe.Gate(_sv, _rt);
+#@gate-name-1
+#_rt = _tk.token;
+#@gate-name-2
+#_rt = _tk.token;
+#@unop-1
+#_rt = _rt < 0;
+#@v-comp-1
+#_sv = _rt;
+#@v-comp-2
+#_rt.coeff = _sv;
+#@p-state-tail-0
+#_rt = [];
+#@p-state-tail-1
+#_sq = [];
+#@p-state-tail-2
+#_sv = _rt;
+#@p-state-tail-3
+#if (_sv < 0)
+#  _rt.negate();
+#_sq.push(_rt);
+#_rt = _sq;
+#@addop-1
+#_rt = 1.0;
+#@addop-2
+#_rt = -1.0;
+#@coeff-0
+#_rt = Number(1.0);
+#@coeff-1
+#_rt = _tk.token;
+#@ket-2
+#_sv = new this.exe.Ket(_tk.token);
+#@ket-3
+#_rt = _sv;
+#@g-factor-1
+#_sv = _rt;
+#@g-factor-2
+#if (_sv)
+#  _rt = '-' + _rt;
+#_rt = new this.exe.GateFactor(_rt);
+#@gate-suffix-1
+#_sv = _rt;  // angle if any
+#@gate-suffix-2
+#_rt = [_sv, _rt];
+#@gate-angle-1
+#_sv = _rt;
+#@gate-angle-2
+#if (_sv)
+#  _rt = '-' + _rt;
+#_sv = [_rt];
+#@gate-angle-3
+#_rt = _sv.concat(_rt);
+#@gate-repl-1
+#_sv = _rt;
+#@gate-repl-2
+#_rt = new this.exe.LineRef(_sv, _rt);
+#@cmplxs-0
+#_rt = [];
+#@cmplxs-1
+#_sq = [];
+#@cmplxs-2
+#_sv = _rt;
+#@cmplxs-3
+#if (_sv)
+#  _rt = '-' + _rt;
+#_sq.push(_rt);
+#_rt = _sq;
+#@lines-1
+#_sv = [];
+#@lines-2
+#_sv.push(_rt);
+#_rt = _sv;
+#@line-0
+#_rt = [];
+#@line-1
+#_rt = [_tk.token, _rt];
+#@reg-1
+#_rt = new this.exe.Register(_tk.token);
+#@Complex-1
+#_rt = _tk.token;
+#@Complex-2
+#_rt = _tk.token;
+#@Complex-3
+#_rt = _tk.token;
+#@end
