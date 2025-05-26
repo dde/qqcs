@@ -19,7 +19,7 @@ public class Symbol implements Iterable<Production>
   boolean nullable;
   boolean terminal;
   boolean keyword;
-
+  boolean startSym;
   Set<Symbol> first = new HashSet<>();
   Set<Symbol> follow = new HashSet<>();
   List<ProdMeta> appearances = new ArrayList<>();
@@ -64,10 +64,20 @@ isNullable()
 {
   return nullable;
 }
-public void
+void
 setNullable(final boolean nul)
 {
   this.nullable = nul;
+}
+public boolean
+isStartSym()
+{
+  return startSym;
+}
+void
+setStartSym(final boolean nul)
+{
+  this.startSym = nul;
 }
 public String toString()
 {
@@ -90,6 +100,9 @@ public Set<Symbol> getFollow()
 public void setFollow(Symbol flw)
 {
   follow.add(flw);
+}
+public boolean hasFollow() {
+  return 0 != follow.size();
 }
 public boolean isTerminal()
 {
