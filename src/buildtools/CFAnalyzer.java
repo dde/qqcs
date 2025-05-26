@@ -139,6 +139,8 @@ Production findStartSymbol()
       }
     }
   }
+  if (null != start)
+    start.setStartSym(true);
   return stp;
 }
 void classify()
@@ -222,7 +224,7 @@ private String toFirstString(Symbol s1)
   Set<Symbol> fset;
   StringBuilder sb = new StringBuilder();
   boolean first;
-  sb.append("first{");
+  sb.append("first{ ");
   fset = s1.getFirst();
   first = true;
   for (Symbol s2 : fset)
@@ -230,10 +232,10 @@ private String toFirstString(Symbol s1)
     if (first)
       first = false;
     else
-      sb.append(",");
+      sb.append(" ");
     sb.append(s2.getToken());
   }
-  sb.append("}");
+  sb.append(" }");
   return sb.toString();
 }
 private String toFollowString(Symbol s1)
@@ -241,7 +243,7 @@ private String toFollowString(Symbol s1)
   Set<Symbol> fset;
   StringBuilder sb = new StringBuilder();
   boolean first;
-  sb.append("follow{");
+  sb.append("follow{ ");
   fset = s1.getFollow();
   first = true;
   for (Symbol s2 : fset)
@@ -249,10 +251,10 @@ private String toFollowString(Symbol s1)
     if (first)
       first = false;
     else
-      sb.append(",");
+      sb.append(" ");
     sb.append(s2.getToken());
   }
-  sb.append("}");
+  sb.append(" }");
   return sb.toString();
 }
 private void displayFF(Symbol s1)
@@ -342,6 +344,8 @@ void first_follow()
         rgt = rgt_side[ix];
         if (rgt.isTerminal())
           continue;
+//        if ("oeol".equals(rgt.toString()))
+//          pw.println("found(1) oeol");
         if (ix + 1 < rgt_side.length)
         {
           nxt = rgt_side[ix + 1];
@@ -371,6 +375,8 @@ void first_follow()
       if (tracing)
         pw.println("  -> production " + p1.toString());
       lft = p1.getLeft();
+//      if ("oeol".equals(lft.toString()))
+//        pw.println("found(2) oeol");
       rgt = p1.getLast();
       if (null == rgt)
         continue;
