@@ -72,17 +72,19 @@ let ql = require('../qdesk_lexer.js'),
     qq = require('../qdesk_compile.js'),
     qi = require('../qdesk_interpret.js');
 let tkn, ix;
-let tfil, lex, compiler, interp, stmt;
+let tfil, lex, compiler, interp, stmt, sstmt;
 let cfg = {
   files:[],
   kdisp:false,
+  nomrr:false,
   trace:false,
   // sparse:false,
   ualt:false,
   ocache: false,
+  qrev:false,
   rzeroes: false,
   none:'',
-  flags:{k:'kdisp', t:'trace', s:'sparse', u:'ualt', o: 'ocache', r: 'rzeroes'}
+  flags:{k:'kdisp', m:'nomrr', t:'trace', s:'sparse', u:'ualt', o: 'ocache', q:'qrev', r: 'rzeroes'}
 };
 let tc, tst, tstout, assert, fail, util;
   cmdArgs(cfg, usage);
@@ -92,6 +94,7 @@ let tc, tst, tstout, assert, fail, util;
     cfg.interactive = true;
     assert = require('assert').strict;
     util = require('util');
+    // tc = require('./single-test.js');
     tc = require('./test_cases.js');
     // tc = require('./one_test_case.js');
     interp = new qi.QDeskInterpret(cfg);
@@ -106,14 +109,16 @@ let tc, tst, tstout, assert, fail, util;
         lex.setSourceLine(tst.stmt);
         if (undefined !== tst.flags)
           setFlags(cfg, tst.flags);
-        // else
-        //   clearFlags();
-        stmt = compiler._stmt();
-        if (null !== stmt)
-        // assert.notStrictEqual(stmt, null);
-          tstout = interp.exec(stmt);
+        stmt = compiler._pgm();
+        if (null !== stmt || null === tst.stmt.match(/^ *#/))
+        {
+          interp.starttest();
+          interp.exec(stmt);
+          tstout = interp.endtest();
+        }
         else
           tstout = [];
+        // tstout = (null !== stmt) ? interp.exec(stmt) : [];
         assert.notStrictEqual(tstout, undefined);
         assert.strictEqual(tstout.join(''), tst.expect);
         tkn = lex.next_token();
@@ -136,22 +141,19 @@ let tc, tst, tstout, assert, fail, util;
     for (ix = 0; ix < cfg.files.length; ++ix)
     {
       tfil = cfg.files[ix];
+      interp.clearFlags();
       process.stdout.write('---test file:' + tfil + '---\n')
       lex = new ql.QDeskLexer(tfil, interp.getCommentProcessor());
       compiler = new qq.QDeskCompile(lex, ql.QlxSymbol, interp);
-      stmt = compiler._stmt();
-      while (null != stmt)
+      tkn = lex.lookAhead();
+      while (ql.QlxSymbol['none'] !== tkn.symbol)
       {
-        interp.exec(stmt);
-        tkn = lex.next_token();
-        if (ql.QlxSymbol['none'] === tkn.symbol)
-          break;
-        if (ql.QlxSymbol['eol'] !== tkn.symbol)
-        {
-          process.stdout.write('logic error symbol ' + tkn.toString() + '\n');
-          break;
-        }
-        stmt = compiler._stmt();
+        if (ql.QlxSymbol['eol'] === tkn.symbol)
+          tkn = lex.next_token();
+        stmt = compiler._pgm();
+        // if (null !== stmt)
+          interp.exec(stmt);
+        tkn = lex.lookAhead();
       }
       process.stdout.write('---execution complete---\n');
     }

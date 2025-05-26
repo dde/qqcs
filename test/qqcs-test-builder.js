@@ -136,13 +136,19 @@ class Texp
       }
       else if (null != (mtch = line.match(/^---test file/)))
       {
+        if (0 < lines.length)
+        {
+          this.writeExpect(++id, cmd, lines);
+          lines = [];
+          cmd = '';
+        }
+        this.writeExpect(++id, '#$none\\n', lines);
       }
       else if (null != (mtch = line.match(/^\[ *(\d+)] *(.*)/)))
       {
         if (0 < lines.length)
         {
-          id += 1;
-          this.writeExpect(id, cmd, lines);
+          this.writeExpect(++id, cmd, lines);
           lines = [];
         }
         else
@@ -151,8 +157,7 @@ class Texp
           //mtch[2] = cmd + '\\n' + mtch[2];
           if (0 < cmd.length)
           {
-            id += 1;
-            this.writeExpect(id, cmd + '\\n', lines);
+            this.writeExpect(++id, cmd + '\\n', lines);
           }
         }
         cmd = mtch[2];
