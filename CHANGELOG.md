@@ -36,3 +36,12 @@
 - [**#24**](https://github.com/dde/qqcs/issues/24) V1.4.0 Enhancements
 ## [**1.4.1**](https://github.com/dde/qqcs/issues?milestone=25&state=closed)
 - [**#25**](https://github.com/dde/qqcs/issues/25) V1.4.1 Enhancements
+## [**1.5.0**](https://github.com/dde/qqcs/)
+* Add multi-digit qubit line references and replication suffixes
+* Provide custom gates with replication and control suffixes
+* Add generic gates
+* Add registers
+* Initial values can be computed by gate sequences
+* Add option-controlled big-endian qubit line references (option qrev)
+* Add most recent comptation result (quantum state) available for next computation
+* Add negation to permutation gates
