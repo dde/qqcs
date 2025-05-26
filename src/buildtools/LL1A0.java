@@ -185,6 +185,8 @@ void terminalNames()
           continue;
         }
         genkey = cmt.substring(2);
+        if (null != compileCode.get(genkey))
+          pw.println(String.format("duplicated code point %s", genkey));
         stmts = new ArrayList<>();
         compileCode.put(genkey, stmts);
       }
@@ -207,7 +209,7 @@ static public void main(String[] args)
   GramLexer0 lex;
   LL1A0 ll1;
   PrintWriter pw, cg;
-  CodeGen cgen;
+  CodeGenJS2 cgen;
   File codeFile;
   try
   {
@@ -249,7 +251,7 @@ static public void main(String[] args)
     {
       codeFile = ll1.checkOutputFile(new File(opt.getCodeFile()));
       cg = new PrintWriter(codeFile);
-      cgen = new CodeGen(ll1, cg, pw, opt);
+      cgen = new CodeGenJS2(ll1, cg, pw, opt);
       cgen.generate(ll1.compileCode);
       cg.close();
       pw.println(String.format("\ncode written to %s", opt.getCodeFile()));
