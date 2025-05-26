@@ -633,12 +633,21 @@ CVector.prototype.__proto__ = CMatrix.prototype;*/
     console.log(' ' + d2.disp());
   }
 }*/
-/*function test()
+function test()
 {
   let tp, c1 = new CMatrix([new CMatrix.Complex(11), new CMatrix.Complex(12)], [new CMatrix.Complex(21), new CMatrix.Complex(22)]),
       c2 = new CMatrix([new CMatrix.Complex(1), new CMatrix.Complex(0)], [new CMatrix.Complex(0), new CMatrix.Complex(1)]);
   tp = c1.tensorprod(c2);
   console.log('%s', tp.disp());
 }
-test();*/
+function poly()
+{
+  /* polynomial multiplication */
+  let tp, c1 = new CMatrix([new CMatrix.Complex(11), new CMatrix.Complex(12), new CMatrix.Complex(21), new CMatrix.Complex(22)]),
+      c2 = new CMatrix([new CMatrix.Complex(1), new CMatrix.Complex(1), new CMatrix.Complex(1), new CMatrix.Complex(1)]);
+  tp = c1.tensorprod(c2);
+  console.log('%s', tp.disp());
+}
+// test();
+// poly();
 exports.CMatrix = CMatrix;
