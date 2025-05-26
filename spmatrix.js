@@ -469,7 +469,7 @@ class SpMatrix
   adjoint() {
     // complex sparse matrix adjoint (conjugate transpose)
     let ix, cln, ri, rel;
-    cln = new SpMatrix(this._rows, this._cols, true);
+    cln = new SpMatrix(this._cols, this._rows, true);
     for (ix = 0; ix < this._rows; ++ix)
     {
       ri = this.rowMajor(ix);
@@ -556,6 +556,7 @@ class SpMatrix
     {
       cln.spm[2][ix] = this.spm[2][ix];
     }
+    cln.complete = this.complete;
     return cln;
   }
   clonenv() {
@@ -570,6 +571,7 @@ class SpMatrix
     {
       cln.spm[2][ix] = this.spm[2][ix];
     }
+    cln.complete = this.complete;
     return cln;
   }
   factorOut(f) {
