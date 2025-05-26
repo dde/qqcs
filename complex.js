@@ -2,8 +2,17 @@
  * Created by danevans on 1/20/18.
  */
 function Complex(re, im) {
-  if (typeof arguments[0] === 'string')
+  if (typeof arguments[0] === "string")
   {
+    this.real = 0.0;
+    this.imag = 0.0;
+    this.magn = re.match(/(([+-]?)[0-9.]+)i/); // is there an imag with i suffix
+    if (this.magn !== null)
+      this.imag = parseFloat(this.magn[1]);
+    this.magn = re.match(/(([+-]?)[0-9.]+)(.?)/); // is there a real with optional imag
+    if (this.magn !== null && this.magn[3] !== 'i')
+      this.real = parseFloat(this.magn[1]);
+    /*
     this.magn = re.match(/(([+-]?)([0-9.]+))?(([+-])([0-9.]+)i)?/); // both real and imag must be present with i suffix
     if (this.magn != null)
     {
@@ -12,15 +21,21 @@ function Complex(re, im) {
       else
         this.real = 0.0;
       if (this.magn[4] !== undefined)
+      {
         this.imag = parseFloat(this.magn[4]);
+        // if (this.real === 0.0 && this.magn[2] === '-')
+        //  this.imag *= -1.0;
+      }
       else
         this.imag = 0.0;
+
     }
     else
     {
       this.real = 0.0;
       this.imag = 0.0;
     }
+    */
   }
   else if (arguments[0] instanceof Complex)
   {
@@ -108,6 +123,9 @@ Complex.prototype.Im = function() {
 };
 Complex.prototype.isZero = function() {
   return Math.abs(this.real) < Complex.tolerance && Math.abs(this.imag) < Complex.tolerance;
+};
+Complex.prototype.isReal = function() {
+  return Math.abs(this.imag) < Complex.tolerance;
 };
 Complex.prototype.unit = function () {
   let c = this.clone();
