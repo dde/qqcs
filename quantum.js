@@ -83,36 +83,43 @@ Quantum.bellPhiNeg = new Matrix([new Complex(1 / Math.SQRT2, 0)], [Quantum.ZERO]
 Quantum.bellPsiPos = new Matrix( [Quantum.ZERO], [new Complex(1 / Math.SQRT2, 0)], [new Complex(1 / Math.SQRT2, 0)], [Quantum.ZERO]);
 Quantum.bellPsiNeg = new Matrix( [Quantum.ZERO], [new Complex(1 / Math.SQRT2, 0)], [new Complex(-1 / Math.SQRT2, 0)], [Quantum.ZERO]);
 
+Quantum.bitString = function(ix, qb) {
+  let bas;
+  bas = (ix).toString(2);
+  return '0'.repeat(qb - bas.length) + bas;
+};
+Quantum.bitStringR = function(ix, qb) {
+  let bas;
+  bas = (ix).toString(2).split('').reverse().join('');
+  return bas + '0'.repeat(qb - bas.length);
+};
 /**
- * Build a CNOT matrix for use in an n-qubit curcuit with arbitrary control and target lines
+ * Build a CNOT matrix for use in an n-qubit circuit with arbitrary control and target lines
  * @param qbits number of qubits in the circuit - matrix will be 2^q x 2^q
  * @param ctl control qubit line 0 <= c < qubits
  * @param tgt target qubit line 0 <= t < qubits and t != c
+ * @param rv (true) big-endian qubit subscripts
  */
-Quantum.buildCNOT = function (qbits, ctl, tgt)
+Quantum.buildCNOT = function (qbits, ctl, tgt, rv = false)
 {
   let sz, ix, jx, gat, bas;
   if (qbits < 2 || qbits > Quantum.qubits || ctl < 0 || ctl >= qbits || tgt < 0 || tgt >= qbits)
-    throw new Error('buildCNOT argument range error qubits:' + qbits + ', ctl:' + ctl + ', tgt:' + tgt);
+    throw new Error('CNOT argument range error qubits:' + qbits + ', ctl:' + ctl + ', tgt:' + tgt);
+  if (rv)
+  {
+    ctl = (qbits - 1) - ctl;
+    tgt = (qbits - 1) - tgt;
+  }
   sz = Math.pow(2, qbits);
   gat = new Matrix(sz, sz);
-  // for (ix = 0; ix < sz; ++ix)
-  // {
-  //   for (jx = 0; jx < sz; ++jx)
-  //   {
-  //     gat.sub(ix, jx, Quantum.ZERO);
-  //   }
-  // }
   for (ix = 0; ix < sz; ++ix)
   {
-    bas = (ix).toString(2);
-    bas = '0'.repeat(qbits - bas.length) + bas;
+    bas = Quantum.bitString(ix, qbits);
     if (bas[ctl] === '1')
     {
       bas = bas.split('');
       bas[tgt] = (bas[tgt] === '0') ? '1' : '0';
       jx = parseInt(bas.join(''), 2);
-      // jx = parseInt(bas, 2);
     }
     else
     {
@@ -122,7 +129,16 @@ Quantum.buildCNOT = function (qbits, ctl, tgt)
   }
   return gat;
 };
-Quantum.buildToffoli = function (qbits, ctl, tgt) {
+Quantum.allset = function (bas, lst) {
+  let ix;
+  for (ix = 0; ix < lst.length; ++ix)
+  {
+    if (bas[lst[ix]] === '0')
+      return false;
+  }
+  return true;
+};
+Quantum.buildToffoli = function (qbits, ctl, tgt, rv = false) {
   let sz, ix, jx, gat, bas;
   function verify(qb, arr, tg) {
     let ix, jx, mx, vl;
@@ -144,26 +160,22 @@ Quantum.buildToffoli = function (qbits, ctl, tgt) {
     }
     return true;
   }
-  function allset(bas, lst) {
-    let ix;
-    for (ix = 0; ix < lst.length; ++ix)
-    {
-      if (bas[lst[ix]] === '0')
-        return false;
-    }
-    return true;
-  }
   if (qbits < ctl.length + 1 || qbits > Quantum.qubits)
     throw new Error('Toffoli argument range error - 3 <= qubits <= ' + String(Quantum.qubits));
   if (!verify(qbits, ctl, tgt))
     throw new Error('Toffoli circuit line error');
+  if (rv)
+  {
+    for (ix = 0; ix < qbits; ++ix)
+      ctl[ix] = (qbits - 1) - ctl[ix];
+    tgt = (qbits - 1) - tgt;
+  }
   sz = Math.pow(2, qbits);
   gat = new Matrix(sz, sz);
   for (ix = 0; ix < sz; ++ix)
   {
-    bas = (+ix).toString(2);
-    bas = '0'.repeat(qbits - bas.length) + bas;
-    if (allset(bas, ctl))
+    bas = Quantum.bitString(ix, qbits);
+    if (Quantum.allset(bas, ctl))
     {
       bas = bas.split('');
       bas[tgt] = (bas[tgt] === '0') ? '1' : '0';
@@ -424,27 +436,43 @@ Quantum.buildRx = function (ph) {
 /**
  * Build a general controlled gate from a single-qubit gate, one control qubit, and one target qubit
  * @param qbits the span of the controlled gate
- * @param ctl the control line
+ * @param cta the control line
  * @param tgt the target line
  * @param gat the one qubit gate to be controlled (a Matrix)
+ * @param rv (true) use big-endian qubit subscripts
  */
-Quantum.buildControlled = function (qbits, ctl, tgt, gat) {
-  let ix, jx, q0, q1, n, ket, cg, ll, qs;
+Quantum.buildControlled = function (qbits, cta, tgt, gat, rv = false) {
+  let ix, jx, q0, q1, n, ket, cg, ll, qs, ctl;
   if (!(gat instanceof Matrix) || 2 !== gat.rows() || 2 !== gat.columns())
     throw new Error('gate to be controlled must be 2x2 Matrix');
+  ctl = new Array(cta.length);
+  if (rv)
+  {
+    tgt = (qbits - 1) - tgt;
+    for (ix = 0; ix < cta.length; ++ix)
+    {
+      ctl[ix] = (qbits - 1) - cta[ix];
+    }
+  }
+  else
+  {
+    for (ix = 0; ix < cta.length; ++ix)
+    {
+      ctl[ix] = cta[ix];
+    }
+  }
   q0 = gat.prod(Quantum.q0);
   q1 = gat.prod(Quantum.q1);
   n = Math.pow(2, qbits);
   cg = new Matrix(n, n);
   for (ix = 0; ix < n; ++ix)
   {
-    ket = Number(ix).toString(2);
-    ket = '0'.repeat(qbits - ket.length) + ket;
+    ket = Quantum.bitString(ix, qbits);
     qs = new Matrix(1, 1);
     qs.sub(0, 0, Quantum.ONE);
     for (jx = 0; jx < qbits; ++jx)
     {
-      if (jx === tgt && '1' === ket[ctl])
+      if (jx === tgt && Quantum.allset(ket, ctl))
       {
         ll = ('1' === ket[jx]) ? q1 : q0;
       }
@@ -461,12 +489,17 @@ Quantum.buildControlled = function (qbits, ctl, tgt, gat) {
   }
   return cg;
 };
-Quantum.buildSwap = function (qbits, sw1, sw2) {
+Quantum.buildSwap = function (qbits, sw1, sw2, rv = false) {
   let ix, jx, q0, q1, n, cg, qs;
   if (qbits < 1 || qbits > Quantum.qubits)
     throw new Error('argument range error 1 <= qubits <=' + Quantum.qubits);
-  if (sw1 < 0 || sw1 >= qbits || sw2 < 0 || sw2 >= qbits || sw1 === sw2)
-    new Error('swap lines must be unique and within qubits range');
+  //if (sw1 < 0 || sw1 >= qbits || sw2 < 0 || sw2 >= qbits || sw1 === sw2)
+  //  new Error('swap lines must be unique and within qubits range');
+  if (rv)
+  {
+    sw1 = (qbits - 1) - sw1;
+    sw2 = (qbits - 1) - sw2;
+  }
   if (sw2 < sw1)
   {
     ix = sw1;
@@ -477,8 +510,7 @@ Quantum.buildSwap = function (qbits, sw1, sw2) {
   cg = new Matrix(n, n);
   for (ix = 0; ix < n; ++ix)
   {
-    q0 = Number(ix).toString(2);
-    q0 = '0'.repeat(qbits - q0.length) + q0;
+    q0 = Quantum.bitString(ix, qbits);
     q1 = q0.substring(0, sw1) + q0[sw2] + q0.substring(sw1 + 1, sw2) + q0[sw1] + q0.substring(sw2 + 1);
     qs = this.buildBasis(qbits, parseInt(q1, 2));
     for (jx = 0; jx < n; ++jx)
@@ -488,13 +520,19 @@ Quantum.buildSwap = function (qbits, sw1, sw2) {
   }
   return cg;
 };
-Quantum.buildFred = function (qbits, ctl, sw1, sw2) {
+Quantum.buildFred = function (qbits, ctl, sw1, sw2, rv = false) {
   let ix, jx, q0, q1, q2, q3, n, cg, qs, sw;
   if (qbits < 1 || qbits > Quantum.qubits)
     throw new Error('argument range error 1 <= qubits <=' + Quantum.qubits);
   if (sw1 < 0 || sw2 < 0 || ctl < 0 || sw1 >= qbits || sw2 >= qbits || ctl >= qbits ||
       sw1 === sw2 || ctl === sw1 || ctl === sw2)
     throw new Error('swap and control lines must be unique and within qubits range');
+  if (rv)
+  {
+    ctl = (qbits - 1) - ctl;
+    sw1 = (qbits - 1) - sw1;
+    sw2 = (qbits - 1) - sw2;
+  }
   if (sw2 < sw1)
   {
     ix = sw1;
@@ -508,8 +546,7 @@ Quantum.buildFred = function (qbits, ctl, sw1, sw2) {
   cg = new Matrix(n, n);
   for (ix = 0; ix < n; ++ix)
   {
-    q0 = Number(ix).toString(2);
-    q0 = '0'.repeat(qbits - q0.length) + q0;
+    q0 = Quantum.bitString(ix, qbits);
     qs = new Matrix(1, 1);
     qs.sub(0, 0, Quantum.ONE);
     if (sw1 > 0)
@@ -596,20 +633,16 @@ Quantum.probabilities = function (q) {
  * @param mask a binary string, the length of the number of qubits q, indicating which qubits should be measured; the
  *             bits should be ordered from left to right in circuit order top to bottom
  * @param q the quantum state to be measured
+ * @param rq (true) use big-endian qubit subscripts
  */
 Quantum.measure = function(mask, q) {
-  function binString(qbs) {
+  function binString(qbits) {
     let bin, sz, ix, str;
-    sz = Math.pow(2, qbs);
+    sz = Math.pow(2, qbits);
     bin = [];
     for (ix = 0; ix < sz; ++ix)
     {
-      str = (ix).toString(2);
-      str = '0'.repeat(qbs - str.length) + str;
-      // while (str.length < qbs)
-      // {
-      //   str = '0' + str;
-      // }
+      str = Quantum.bitString(ix, qbits);
       bin.push(str);
     }
     return bin;
