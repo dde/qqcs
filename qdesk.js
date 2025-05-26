@@ -3,18 +3,19 @@
  */
 (function() {
   function usage() {
-    console.log("usage: node %s [-c] [-i] [-t] [-k] [-r] [-u] [-h] [input-files]", 'qdesk.js');
+    console.log("usage: node %s [-c] [-i] [-h] [-k] [m] [-q] [-r] [-t] [-u] [input-files]", 'qdesk.js');
     console.log("  c - cache oracles when generated");
     console.log("  h - display this help");
     console.log("  i - interactive mode (implied with no files, otherwise batch mode)");
     console.log("  k - use ket display when circuit initial value is provided");
+    console.log("  m - suppress the operation of most recent result")
+    console.log("  q - number qubits using big-endian subscripts");
     console.log("  r - replace zero elements (0) in sparse matrix displays with periods (.) for better readability");
     console.log("  t - trace circuit steps");
     console.log("  u - use alternate unitary matrix definition for U, Rx, Ry, Rz gates");
-    console.log("  input-files - zero or more input QDesk statement files");
+    console.log("  input-files - zero or more input QQCS statement files");
     process.exit(1);
   }
-
   /*
    * a config object has a minimum of two properties:
    * {
@@ -72,18 +73,19 @@
         }
     return true;
   }
-  function interpret_cb(src) {
+  function interpret_cbo(src) {
+    let stmt, tkn;
     try
     {
       lex.setSourceLine(src);
       stmt = compiler._stmt();
       if (null !== stmt)
       {
-        interp.exec(stmt);
+        interp.exec([stmt]);
       }
       else
       {
-        if (null == src.match(/^ *(#.*)?\r?\n?$/))
+        if (null === src.match(/^ *(#.*)?\r?\n?$/))
         {
           console.log('unrecognized statement');
           // for (let ch of src)
@@ -107,14 +109,90 @@
       console.log('logic error (line end) symbol %s', tkn.toString());
     }
   }
+  function interpret_cbx(src) {
+    let stmt, tkn;
+    try
+    {
+      lex.setSourceLine(src);
+      stmt = compiler._pgm();
+      if (null !== stmt)
+      {
+        tkn = lex.next_token();
+        if (qd.QlxSymbol.semi === tkn.symbol)
+        {
+          tkn = lex.next_token();
+          if (qd.QlxSymbol.eol !== tkn.symbol)
+            lex.pushBack(tkn);
+          stmt.push(stmt);
+          return false;
+        }
+        else if (qd.QlxSymbol.eol === tkn.symbol)
+        {
+          stmt.push(stmt);
+          interp.exec(stmt);
+          stmt = [];
+        }
+        else
+        {
+          console.log('logic error (line end) symbol %s', tkn.toString());
+        }
+      }
+      else
+      {
+        if (null === src.match(/^ *(#.*)?\r?\n?$/))
+        {
+          console.log('unrecognized statement "' + src + '"');
+          // for (let ch of src)
+          // {
+          //   process.stdout.write(' ' + ch.charCodeAt(0));
+          // }
+          // process.stdout.write('\n');
+          stmt = [];
+        }
+      }
+    }
+    catch (e)
+    {
+      console.log('error:%s', e.message);
+      stmt = [];
+    }
+    return true;
+  }
+  function interpret_cb(src)
+  {
+    let sstmt, tkn;
+    try
+    {
+      lex.setSourceLine(src);
+      sstmt = compiler._pgm();
+      if (null !== sstmt)
+      {
+        interp.exec(sstmt);
+      }
+      else
+      {
+        if (null === src.match(/^ *(#.*)?\r?\n?$/))
+        {
+          console.log('unrecognized statement "' + src + '"');
+        }
+        else
+          interp.exec(null);
+      }
+    }
+    catch (e)
+    {
+      console.log('error:%s', e.message);
+    }
+    return true;
+  }
   let qd = require('./qdesk_lexer.js'),
       qq = require('./qdesk_compile.js'),
       qi = require('./qdesk_interpret.js');
       //SynErr = qq.Synerr,
   let tkn, ix;
-  let lex, compiler, interp, stmt;
+  let lex, compiler, interp, stmt, sstmt;
   let tt, intro =
-      ['Quick Quantum Circuit Simulation\n',
+      ['Quick Quantum Circuit Simulation (v1.5.0)\n',
         '  #$gate - display a gate summary, #$help - display comment switches\n',
         '  left arrow - move cursor left;  right arrow - move cursor right\n',
         '  delete (Mac) - delete the character left of cursor and shift characters left\n',
@@ -130,16 +208,20 @@
     rzeroes: false,
     help: false,
     ualt: false,
+    nomrr: false,
     ocache: false,
+    qrev: false,
     none:'',
     gate:'',
     flags: {
       i: 'interactive',
       t: 'trace',
       k: 'kdisp',
+      m: 'nomrr',
       u: 'ualt',
       r: 'rzeroes',
       o: 'ocache',
+      q: 'qrev',
       h: 'help'
     }
   };
@@ -154,38 +236,32 @@
     lex = new qd.QDeskLexer('interactive', interp.getCommentProcessor());
     compiler = new qq.QDeskCompile(lex, qd.QlxSymbol, interp);
     tt = require('./qdesk_interactive.js');
+    stmt = [];
     tt.terminal(interpret_cb, intro);
+    return;
   }
-  else
+  cfg.skel = false;
+  for (ix = 0; ix < cfg.files.length; ++ix)
   {
-    cfg.skel = false;
-    for (ix = 0; ix < cfg.files.length; ++ix)
+    console.log('--- file:%s---', cfg.files[ix])
+    interp = new qi.QDeskInterpret(cfg);
+    lex = new qd.QDeskLexer(cfg.files[ix],  interp.getCommentProcessor());
+    compiler = new qq.QDeskCompile(lex, qd.QlxSymbol, interp);
+    // if (cfg.skel)
+    // {
+    //   stmt = compiler._pgm();
+    //   console.log('---syntax complete---');
+    //   return;
+    // }
+    sstmt = compiler._pgm();
+    while (null != sstmt)
     {
-      console.log('--- file:%s---', cfg.files[ix])
-      interp = new qi.QDeskInterpret(cfg);
-      lex = new qd.QDeskLexer(cfg.files[ix],  interp.getCommentProcessor());
-      compiler = new qq.QDeskCompile(lex, qd.QlxSymbol, interp);
-      // if (cfg.skel)
-      // {
-      //   stmt = compiler._pgm();
-      //   console.log('---syntax complete---');
-      //   return;
-      // }
-      stmt = compiler._stmt();
-      while (null != stmt)
-      {
-        interp.exec(stmt);
-        tkn = lex.next_token();
-        if (qd.QlxSymbol.none === tkn.symbol)
-          break;
-        if (qd.QlxSymbol.eol !== tkn.symbol)
-        {
-          console.log('logic error symbol %s', tkn.toString());
-          break;
-        }
-        stmt = compiler._stmt();
-      }
-      console.log('---execution complete---');
+      interp.exec(sstmt);
+      tkn = lex.lookAhead();
+      if (qd.QlxSymbol.none === tkn.symbol)
+        break;
+      sstmt = compiler._pgm();
     }
+    console.log('---execution complete---');
   }
 })();

@@ -2,7 +2,7 @@
  * Created by danevans on 3/23/20.
  */
 function QlxSymbol (sym, str, flg) {
-  this.symbol = sym;
+  // this.symbol = sym;
   if (arguments.length >= 2)
     this.token = str;
   else
@@ -11,12 +11,14 @@ function QlxSymbol (sym, str, flg) {
     this.flag = flg;
   else
     this.flag = false;
+  this.symbol = sym;
 }
 QlxSymbol.none = 0;
 QlxSymbol.empty = QlxSymbol.none + 1;
 QlxSymbol.eol = QlxSymbol.empty + 1;
 QlxSymbol.ident = QlxSymbol.eol + 1;
-QlxSymbol.equal = QlxSymbol.ident + 1;
+QlxSymbol.assign = QlxSymbol.ident + 1;
+QlxSymbol.equal = QlxSymbol.assign + 1;
 QlxSymbol.comma = QlxSymbol.equal + 1;
 QlxSymbol.lbrak = QlxSymbol.comma + 1;
 QlxSymbol.rbrak = QlxSymbol.lbrak + 1;
@@ -39,7 +41,8 @@ QlxSymbol.complex = QlxSymbol.real + 1;
 QlxSymbol.bar = QlxSymbol.complex + 1;
 QlxSymbol.less = QlxSymbol.bar + 1;
 QlxSymbol.great = QlxSymbol.less + 1;
-QlxSymbol.barrier = QlxSymbol.great + 1;
+QlxSymbol.reg = QlxSymbol.great + 1;
+QlxSymbol.barrier = QlxSymbol.reg + 1;
 QlxSymbol.reset = QlxSymbol.barrier + 1;
 QlxSymbol.creg = QlxSymbol.reset + 1;
 QlxSymbol.gate = QlxSymbol.creg + 1;
@@ -72,6 +75,7 @@ QlxSymbol.tokens = [
   "$",
   "eol",
   "sym",
+  "=",
   "==",
   ",",
   "[",
@@ -94,13 +98,15 @@ QlxSymbol.tokens = [
   "complex",
   "|",
   "<",
-  ">"
+  ">",
+  "~"
 ];
 QlxSymbol.tkn_names = {
   "none":QlxSymbol.none,
   "$":QlxSymbol.empty,
   "eol":QlxSymbol.eol,
   "sym":QlxSymbol.sym,
+  "=":QlxSymbol.assign,
   "==":QlxSymbol.equal,
   ",":QlxSymbol.comma,
   "[":QlxSymbol.lbrak,
@@ -123,7 +129,8 @@ QlxSymbol.tkn_names = {
   "complex":QlxSymbol.complex,
   "|":QlxSymbol.bar,
   "<":QlxSymbol.less,
-  ">":QlxSymbol.great
+  ">":QlxSymbol.great,
+  "~":QlxSymbol.reg
 };
 QlxSymbol.prototype.toString = function ()
 {
@@ -297,17 +304,28 @@ class QDeskLexer
       throw new LexErr('depth 2 pushback not supported');
     this.pbk = _tk;
   }
-  lookahead(_ch)
+  setLookAhead(_ch)
   {
     if (0 !== this.lka)
       throw new LexErr('depth 2 lookahead not supported');
     this.lka = _ch;
   }
+  lookAhead() {  // look at the next input symbol without consuming it
+    let _tk;
+    if (null === this.pbk)
+    {
+      _tk = this.next_token();
+      this.pushBack(_tk);
+    }
+    return this.pbk;
+  }
   listline()
   {
     let ix, pfx, lin, wid = 2;
     lin = String(this.line);
-    pfx = '[' + (' '.repeat(wid - lin.length)) + lin + ']\ ';
+    ix = wid - lin.length;
+    pfx = '[' + ((ix > 0) ? ' '.repeat(ix) : '') + lin + '] ';
+    //pfx = '[' + (' '.repeat(wid - lin.length)) + lin + ']\ ';
     ix = this.source_line.length - 1;
     if ('\n' === this.source_line[ix])
       console.log(pfx + this.source_line.substring(0, ix));
@@ -483,9 +501,19 @@ class QDeskLexer
       {
       case QDeskLexer.EQ:
         _ch = this.next();
+        /*
         if (_ch !== QDeskLexer.EQ)
           throw new Error("lexerr: unrecognized token:'" + QDeskLexer.EQ + _ch + '\' at ' + String(this.linenumber) + ':' + String(this.position));
-        this.ltk = new this.QlxSymbol(this.QlxSymbol.equal);
+        */
+        if (_ch === QDeskLexer.EQ)
+        {
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.equal);
+        }
+        else
+        {
+          this.setLookAhead(_ch)
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.assign);
+        }
         break;
       case QDeskLexer.PLU:
         this.ltk = new this.QlxSymbol(this.QlxSymbol.plus);
@@ -496,11 +524,14 @@ class QDeskLexer
       case QDeskLexer.POW:
         this.ltk = new this.QlxSymbol(this.QlxSymbol.power);
         break;
+      case QDeskLexer.REG:
+        this.ltk = new this.QlxSymbol(this.QlxSymbol.reg);
+        break;
       case QDeskLexer.DSH:
         _ch = this.next();
         if (_ch !== QDeskLexer.GT)
         {
-          this.lookahead(_ch);
+          this.setLookAhead(_ch);
           this.ltk = new this.QlxSymbol(this.QlxSymbol.minus);
         }
         else
@@ -511,7 +542,7 @@ class QDeskLexer
         _ch = this.next();
         if (_ch !== QDeskLexer.SLS)
         {
-          this.lookahead(_ch);
+          this.setLookAhead(_ch);
           this.ltk = new this.QlxSymbol(this.QlxSymbol.divide);
           break;
         }
@@ -533,6 +564,7 @@ class QDeskLexer
         if (null != this._cmt_processor)
           // this._cmt_processor.call(null, this.source_line.substring(this._mark, this._cix));
           this._cmt_processor(this.source_line.substring(this._mark, this._cix));
+        // this.setLookAhead(_ch);
         _scn = true;
         continue;
       case QDeskLexer.CM:
@@ -582,7 +614,7 @@ class QDeskLexer
         {
           _id = this.next();
           if (_id !== QDeskLexer.NL)
-            this.lookahead(_id);
+            this.setLookAhead(_id);
         }
         this.ltk = new this.QlxSymbol(this.QlxSymbol.eol);
         break;
@@ -645,29 +677,29 @@ class QDeskLexer
             }
             else if (QDeskLexer.G12 === QDeskLexer.gateName1[_tk])
             {
-              this.lookahead(_ch);
+              this.setLookAhead(_ch);
               this.ltk = new this.QlxSymbol(this.QlxSymbol.gate, _tk);
               return this.ltk;
             }
           }
           else
           {
-            this.lookahead(_ch);
+            this.setLookAhead(_ch);
             this.ltk = new this.QlxSymbol(this.QlxSymbol.gate, _tk);
             return this.ltk;
           }
         }
-        while ((_ch >= QDeskLexer.UCA && _ch <= QDeskLexer.UCZ) || (_ch >= QDeskLexer.LCA && _ch <= QDeskLexer.LCZ) ||
-               (_ch >= QDeskLexer.ZERO && _ch <= QDeskLexer.NINE))
+        while ((_ch >= QDeskLexer.UCA && _ch <= QDeskLexer.UCZ) || (_ch >= QDeskLexer.LCA && _ch <= QDeskLexer.LCZ)) // ||
+               //(_ch >= QDeskLexer.ZERO && _ch <= QDeskLexer.NINE))
         {
           this.tkn.push(_ch);
           _ch = this.next();
         }
-        this.lookahead(_ch);
+        this.setLookAhead(_ch);
         _id = this.tkn.join('');
-        if (undefined !== this.QlxSymbol.exprKeys[_id])
-          this.ltk = new this.QlxSymbol(this.QlxSymbol[_id], _id);
-        else
+        //if (undefined !== this.QlxSymbol.exprKeys[_id])
+        //  this.ltk = new this.QlxSymbol(this.QlxSymbol[_id], _id);
+        //else
           this.ltk = new this.QlxSymbol(this.QlxSymbol.ident, _id);
         // console.log('lex:%s', this.ltk.toString());
         return this.ltk;
@@ -689,7 +721,8 @@ class QDeskLexer
         {
           // an imaginary number
           this.tkn.push(_ch);
-          this.ltk = new this.QlxSymbol(this.QlxSymbol.complex, '0+'+ this.tkn.join(''));
+          // this.ltk = new this.QlxSymbol(this.QlxSymbol.complex, '0+'+ this.tkn.join(''));
+          this.ltk = new this.QlxSymbol(this.QlxSymbol.complex, this.tkn.join(''));
           return this.ltk;
         }
         else if (_ch === QDeskLexer.PLU || _ch === QDeskLexer.DSH)
@@ -711,10 +744,10 @@ class QDeskLexer
             return this.ltk;
           }
           this.unmark();
-          this.lookahead(_tk[0]);
+          this.setLookAhead(_tk[0]);
         }
         else
-          this.lookahead(_ch);
+          this.setLookAhead(_ch);
         if (_dl === 0)
         {
           this.ltk = new this.QlxSymbol(this.QlxSymbol.integer, this.tkn.join(''));
@@ -802,6 +835,7 @@ QDeskLexer.POW = '^';
 QDeskLexer.BAR = '|';
 QDeskLexer.LESS = '<';
 QDeskLexer.GREAT = '>';
+QDeskLexer.REG = '~';
 QDeskLexer.HASH = '#';
 QDeskLexer.ZERO = '0';
 QDeskLexer.NINE = '9'
@@ -828,6 +862,7 @@ QDeskLexer.gateName1 = {
   'C': QDeskLexer.G12,
   'D': QDeskLexer.G1,
   'F': QDeskLexer.G2,
+  'G': QDeskLexer.G1,
   'H': QDeskLexer.G1,
   'I': QDeskLexer.G12,
   'K': QDeskLexer.G2,

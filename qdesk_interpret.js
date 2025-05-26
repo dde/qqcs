@@ -16,15 +16,11 @@ class LogicErr extends Error
 class QDeskInterpret
 {
   constructor(cfg) {
-    let qq = require('./quantum.js');
-    if (undefined === QDeskInterpret.single)
-    {
-      QDeskInterpret.single = this;
-    }
-    else
-    {
+    let qq;
+    if (undefined !== QDeskInterpret.single)
       return QDeskInterpret.single;
-    }
+    QDeskInterpret.single = this;
+    qq = require('./quantum.js');
     this.util = require('util');
     this.Quantum = qq.Quantum;
     this.Complex = qq.Complex;
@@ -34,9 +30,11 @@ class QDeskInterpret
     this.NamedGate = NamedGate;
     this.GateFactor = GateFactor;
     this.Ket = Ket;
+    this.LineRef = LineRef;
+    this.Register = Register;
     if (undefined === cfg)
     {
-      this.cfg = {trace:false, kdisp:false, ualt:false, rzeroes:false};
+      this.cfg = {trace:false, kdisp:false, ualt:false, rzeroes:false, qrev:false, nomrr:false};
     }
     else
     {
@@ -52,6 +50,10 @@ class QDeskInterpret
         this.cfg.ualt = false;
       if (typeof cfg.ocache !== 'boolean')
         this.cfg.ocache = false;
+      if (typeof cfg.qrev !== 'boolean')
+        this.cfg.qrev = false;
+      if (typeof cfg.nomrr !== 'boolean')
+        this.cfg.nomrr = false;
       this.Quantum.setUMatrix(this.cfg.ualt);
       if (typeof cfg.rzeroes !== 'boolean')
         this.cfg.rzeroes = false
@@ -60,12 +62,13 @@ class QDeskInterpret
     if (this.cfg.test)
     {
       this.write = this.testwriter;
+      this.test_out = [];
     }
     else
     {
       this.write = this.writer;
+      this.test_out = null;
     }
-    this.test_out = null;
     this.base_set = {
       'C': null,
       'Cr': null,
@@ -92,23 +95,8 @@ class QDeskInterpret
       '_': this.Quantum.iGate,
     };
     this.inst_set = {};
-    this.sym = {};
-    this.sym.None = 0;
-    this.sym.Eol = this.sym.None + 1;
-    this.sym.Gate = this.sym.Eol + 1;
-    this.sym.Lparen = this.sym.Gate + 1;
-    this.sym.Rparen = this.sym.Lparen + 1;
-    this.sym.Comma = this.sym.Rparen + 1;
-    this.sym.Minus = this.sym.Comma + 1;
-    this.sym.Digit = this.sym.Minus + 1;
-    this.sym.Decimal = this.sym.Digit + 1;
-    // this.lex = {cix:0,
-    //   cln:0,
-    //   pbk:null,
-    //   token:'',
-    //   symbol:this.sym.None,
-    //   next_token:this.gate_lexer,
-    //   pushback:this.push_back};
+    this.mrr = '~mrr';
+    this.inst_set[this.mrr] = undefined;
   }
   clearFlags() {
     this.cfg.trace = false;
@@ -117,10 +105,17 @@ class QDeskInterpret
     this.Quantum.setUMatrix(this.cfg.ualt);
     this.cfg.rzeroes = false;
     this.cfg.ocache = false;
+    this.cfg.nomrr = false;
     this.Matrix.setReplaceZeroes(this.cfg.rzeroes);
+    this.inst_set = {};  // clear the cache of any previous U() definitions
   }
   commentProcessor(cmt) {
     let prp, sval;
+    function invertOption(ths, prp) {
+      ths.cfg[prp] = !ths.cfg[prp];
+      if (ths.cfg.interactive)
+        ths.write(`${sval}==${ths.cfg[prp]}\n`);
+    }
     for (prp in this.cfg)
     {
       sval = '$' + prp;
@@ -131,28 +126,31 @@ class QDeskInterpret
       case 'trace':
       case 'kdisp':
       case 'ocache':
-        this.cfg[prp] = !this.cfg[prp];
-        if (this.cfg.interactive)
-          this.write(`${sval}==${this.cfg[prp]}\n`);
+        invertOption(this, prp)
+        break;
+      case 'nomrr':
+        invertOption(this, prp)
+        this.inst_set[this.mrr] = undefined;  // clear any mrr
+        break;
+      case 'qrev':
+        invertOption(this, prp)
+        this.inst_set = {};  // clear the cache of any previous U() definitions
         break;
       case 'ualt':
-        this.cfg[prp] = !this.cfg[prp];
+        invertOption(this, prp)
         this.Quantum.setUMatrix(this.cfg[prp]);
         this.inst_set = {};  // clear the cache of any previous U() definitions
-        if (this.cfg.interactive)
-          this.write(`${sval}==${this.cfg[prp]}\n`);
         break;
       case 'rzeroes':
-        this.cfg[prp] = !this.cfg[prp];
+        invertOption(this, prp);
         //configReplaceZeroes = !configReplaceZeroes;
         this.Matrix.setReplaceZeroes(this.cfg[prp]);
-        if (this.cfg.interactive)
-          this.write(`${sval}==${this.cfg[prp]}\n`);
         break;
       case 'none':
         this.cfg.trace = false;
         this.cfg.kdisp = false;
         this.cfg.ualt = false;
+        this.cfg.nomrr = false;
         this.Quantum.setUMatrix(this.cfg.ualt);
         this.cfg.rzeroes = false;
         this.cfg.ocache = false;
@@ -164,9 +162,9 @@ class QDeskInterpret
         {
           this.write('single qubit gates: _ H X Y Z I S T Sa Ta Rx(r) Ry(r) Rz(r) U(r[,r[,r]]) Kp(r) Rp(r) Tp(r)\n');
           this.write('    r - real multiple of pi, gates may have a control suffix\n');
-          this.write('larger gates: Cx Cr Cct Swct Tfcct Imq Qfq Qaq - c control, t target, q qubits\n');
-          this.write('oracles: Ob Bernstein-Vazirani, Od Deutsch-Jozsa, Og Grover, Os Simon\n');
-          this.write('    optional parameter forces behavior\n');
+          this.write('larger gates: Cx Cr Cct Swtt Tfcct Frctt Imq Qfq Qaq - c control, t target, q qubits\n');
+          this.write('oracles: Obq Bernstein-Vazirani, Odq Deutsch-Jozsa, Ogq Grover, Osq Simon\n');
+          this.write('    optional (n) parameter forces behavior\n');
         }
         break;
       case 'help':
@@ -177,6 +175,8 @@ class QDeskInterpret
           this.write('$ualt - use alternative definition of 1-qubit unitary matrix for U, Rx, Ry, and Rz\n');
           this.write('$rzeroes - replace 0 values with .\'s in matrix displays\n');
           this.write('$ocache - cache random oracles once they are generated\n');
+          this.write('$qrev - number qubits using big-endian subscripts\n');
+          this.write('$nomrr - disable most recent result operation\n');
           this.write('$none - reset all options to false and clear cache\n');
           this.write('$gate - show a summary of all gates\n');
         }
@@ -186,102 +186,117 @@ class QDeskInterpret
       }
     }
   }
-  getCommentProcessor()
-  {
+  getCommentProcessor() {
     return this.commentProcessor.bind(this);
   }
-  writer(line)
-  {
+  writer(line) {
     process.stdout.write(line);
   }
-  testwriter(line)
-  {
+  testwriter(line) {
     this.test_out.push(line);
+  }
+  starttest() {
+    this.test_out = [];
+  }
+  endtest() {
+    return this.test_out;
   }
   buildPermutationMatrix(op, qb) {
     let n, sz, ix, pm, prs;
-    function scan(str) {
-      let cr, st, ln, ch, fs, lft, rgt, pairs;
+    function pm_scan(str) {
+      let cr, st, ln, ch, fs, lft, rgt, pairs, ng;
+      ng = 1;
       fs = lft = rgt = -1;
       pairs = [];
       cr = st = 0;
       ln = str.length;
-      scn:
-          while (cr < ln)
+     scn:
+      while (cr < ln)
+      {
+        ch = str.charAt(cr);
+        switch (st)
+        {
+        case 0: // scanning for left paren
+          if (ch === '(')
+            st = 1;
+          break;
+        case 1: // first digit of left pair or sign
+          if (ch >= '0' && ch <= '9')
           {
-            ch = str.charAt(cr);
-            switch (st)
-            {
-            case 0: // scanning for left paren
-              if (ch === '(')
-                st = 1;
-              break;
-            case 1: // first digit of left pair
-              if (ch >= '0' && ch <= '9')
-              {
-                fs = cr;
-                st = 2;
-              }
-              else
-                throw new Error(`state ${st} found ${ch} when expecting digit`);
-              break;
-            case 2: // period of pair
-              if (ch === '.')
-              {
-                lft = parseInt(str.substring(fs, cr));
-                st = 3;
-              }
-              else if (ch === ',')
-              {
-                lft = parseInt(str.substring(fs, cr));
-                rgt = 0;
-                pairs.push([lft, rgt]);
-                st = 1;
-              }
-              else if (ch === ')')
-              {
-                lft = parseInt(str.substring(fs, cr));
-                rgt = 0;
-                pairs.push([lft, rgt]);
-                st = 5;
-              }else if (ch < '0' || ch > '9')
-                throw new Error(`state ${st} found ${ch} when expecting digit or period`);
-              break;
-            case 3: // first digit of right pair
-              if (ch >= '0' && ch <= '9')
-              {
-                fs = cr;
-                st = 4;
-              }
-              else
-                throw new Error(`state ${st} found ${ch} when expecting digit`);
-              break;
-            case 4: // comma or right paren of pair
-              if (ch === ',')
-              {
-                rgt = parseInt(str.substring(fs, cr));
-                pairs.push([lft, rgt]);
-                st = 1;
-              }
-              else if (ch === ')')
-              {
-                rgt = parseInt(str.substring(fs, cr));
-                pairs.push([lft, rgt]);
-                st = 5;
-                break scn;
-              }
-              else if (ch < '0' || ch > '9')
-                throw new Error(`found ${ch} when expecting digit, comma, or right paren`);
-              break;
-            }
-            cr += 1;
+            fs = cr;
+            st = 2;
           }
+          else if (ch === '-')
+          {
+            ng = -1;
+          }
+          else if (ch === '.')
+          {
+            lft = 0;
+            st = 3;
+          }
+          else
+            throw new Error(`state ${st} found ${ch} when expecting digit`);
+          break;
+        case 2: // period of pair
+          if (ch === '.')
+          {
+            lft = parseInt(str.substring(fs, cr));
+            st = 3;
+          }
+          else if (ch === ',')
+          {
+            lft = parseInt(str.substring(fs, cr));
+            rgt = 0;
+            pairs.push([lft, rgt, ng]);
+            ng = st = 1;
+          }
+          else if (ch === ')')
+          {
+            lft = parseInt(str.substring(fs, cr));
+            rgt = 0;
+            pairs.push([lft, rgt, ng]);
+            ng = 1;
+            st = 5;
+          }else if (ch < '0' || ch > '9')
+            throw new Error(`state ${st} found ${ch} when expecting digit or period`);
+          break;
+        case 3: // first digit of right pair
+          if (ch >= '0' && ch <= '9')
+          {
+            fs = cr;
+            st = 4;
+          }
+          else
+            throw new Error(`state ${st} found ${ch} when expecting digit`);
+          break;
+        case 4: // comma or right paren of pair
+          if (ch === ',')
+          {
+            rgt = parseInt(str.substring(fs, cr));
+            pairs.push([lft, rgt, ng]);
+            ng = st = 1;
+          }
+          else if (ch === ')')
+          {
+            rgt = parseInt(str.substring(fs, cr));
+            pairs.push([lft, rgt, ng]);
+            st = 5;
+            break scn;
+          }
+          else if (ch < '0' || ch > '9')
+            throw new Error(`found ${ch} when expecting digit, comma, or right paren`);
+          break;
+        }
+        cr += 1;
+      }
       if (st !== 5)
         throw new Error(`state ${st} is not correct termination state`);
       return pairs;
     }
     pm = this.Quantum.buildIn(qb);  /* n-qubit Identity matrix */
-    prs = scan(op);
+    //console.log(op);
+    prs = pm_scan(op);
     sz = pm.rows();
     n = prs.length;
     for (ix = 0; ix < n; ++ix)
@@ -289,9 +304,63 @@ class QDeskInterpret
       if (prs[ix][0] >= sz || prs[ix][1] >= sz)
         throw new Error(`permutation reference (${prs[ix][0]},${prs[ix][1]}) out of range`);
       pm.sub(prs[ix][0], prs[ix][0], this.Quantum.ZERO);
-      pm.sub(prs[ix][0], prs[ix][1], this.Quantum.ONE);
+      pm.sub(prs[ix][0], prs[ix][1], (prs[ix][2] < 0) ? this.Quantum.M_ONE : this.Quantum.ONE);
     }
     return pm;
+  }
+  buildGenericMatrix(op, qb) {
+    let sz, ix, jx, gn, vals;
+    function gn_scan(ths, str) {
+      let cr, st, ln, ch, fs, values;
+      fs = -1;
+      values = [];
+      cr = st = 0;
+      ln = str.length;
+      scn: while (cr < ln)
+      {
+        ch = str.charAt(cr);
+        switch (st)
+        {
+        case 0: // scanning for left paren
+          if (ch === '(')
+          {
+            fs = cr + 1;
+            st = 4;
+          }
+          break;
+        case 4: // comma or right paren
+          if (ch === ',')
+          {
+            values.push(new ths.Complex(str.substring(fs, cr)));
+            fs = cr + 1;
+          }
+          else if (ch === ')')
+          {
+            values.push(new ths.Complex(str.substring(fs, cr)));
+            st = 5;
+            break scn;
+          }
+          break;
+        }
+        cr += 1;
+      }
+      if (st !== 5)
+        throw new Error(`state ${st} is not correct termination state`);
+      return values;
+    }
+    gn = this.Quantum.buildIn(qb);  /* n-qubit Identity matrix */
+    vals = gn_scan(this, op);
+    sz = Math.pow(2, qb);
+    if (sz * sz !== vals.length)
+      throw new Error(`${qb} qubit matrix needs ${sz * sz} parameters`);
+    for (ix = 0; ix < sz; ++ix)
+    {
+      for (jx = 0; jx < sz; ++jx)
+      {
+        gn.sub(ix, jx, vals[ix * sz + jx]);
+      }
+    }
+    return gn;
   }
   /*
    * A Deutsch Oracle is basically a permutation matrix.  For each basis vector in a |x,y> n-qubit column matrix,
@@ -309,6 +378,7 @@ class QDeskInterpret
     cv = Math.floor(Math.random() + .5);
     if (t !== undefined)
     {
+      t = Number(t)
       if (t === 0 || t === 1)
       {
         constant = true;
@@ -377,9 +447,11 @@ class QDeskInterpret
       throw new Error('number of qubits must be >= 2 for Bernstein-Vazirani oracle');
     sz = Math.pow(2, n - 1);
     ix = Math.floor(Math.random() * sz);
-    if (t !== undefined && (t >= 0 && t < sz))
+    if (t !== undefined)
     {
-      ix = Math.floor(t);
+      t = Number(t)
+      if  (t >= 0 && t < sz)
+        ix = Math.floor(t);
     }
     s = Number(ix).toString(2);
     s = '0'.repeat(n - 1 - s.length) + s;
@@ -423,7 +495,7 @@ class QDeskInterpret
       fx = new Array(sz);
       r = Math.floor(Math.random() * (sz - 1)) + 1;
       if (t !== undefined)
-        r = t
+        r = Number(t)
       xt = xorTableBin(n);
       vs = [];
       for (ix = 0; ix < fx.length; ++ix)
@@ -469,7 +541,7 @@ class QDeskInterpret
     return oracle;
   }
   /*
-   * A Grover Oracle is an identity matrix with one ennntry negated.  This inverts the phase of a random basis
+   * A Grover Oracle is an identity matrix with one entry negated.  This inverts the phase of a random basis
    * vector of the quantum state on which it operates.
   */
   buildGroverOracle(n, t) {
@@ -478,17 +550,22 @@ class QDeskInterpret
       throw new Error('number of qubits must be >= 1 for Grover oracle');
     sz = Math.pow(2, n);
     ix = Math.floor(Math.random() * sz);
-    if (t !== undefined && (t >= 0 && t < sz))
+    if (t !== undefined)
     {
-      ix = Math.floor(t);
+      t = Number(t)
+      if (t >= 0 && t < sz)
+        ix = Math.floor(t);
     }
     oracle = this.Quantum.buildIn(n);  /* n-qubit Identity matrix */
     oracle.sub(ix, ix).negateq();
     return oracle;
   }
   analyze_opcode(gat) {
-    let bas, ph, sf, op, c1, c2, t1;
-    let opc;
+    let op, c1, c2, t1, qb;
+    let opc = gat.opcode,
+        bas = gat.name,
+        sf,
+        ph;
     function tpower(pwr, mt) {
       let pw, ct, op = null;
       pw = parseInt(pwr);
@@ -504,46 +581,81 @@ class QDeskInterpret
       }
       return op;
     }
-    function suffix(ths, sf, op, opc) {
-      let c1, t1, qb;
-      if (sf.length > 0)
+    function unique(a) {
+      // verify that each element of the passed array is unique
+      // return the maximum line
+      let ln = a.length - 1, mx = a[ln];
+      for (let ix = 0; ix < ln; ++ix)
       {
-        if (1 === sf.length)
+        if (a[ix] > mx)
+          mx = a[ix];
+        for (let jx = ix + 1; jx <= ln; ++jx)
         {
-          op = tpower(sf, op);
+          if (a[ix] === a[jx])
+            throw new Error('lines must be unique');
         }
-        else if (2 === sf.length)
-        {
-          c1 = parseInt(sf.charAt(0));
-          t1 = parseInt(sf.charAt(1));
-          qb = Math.max(c1, t1) + 1;
-          op = ths.Quantum.buildControlled(qb, c1, t1, op);
-        }
-        else
-          throw new Error('gate ' + opc + ' is unknown');
-      }
-      return op;
-    }
-    function ver_tf(arr, tg) {
-      let ix, jx, mx, vl;
-      mx = tg;
-      for (ix = 0; ix < arr.length; ++ix)
-      {
-        vl = arr[ix];
-        if (vl === tg)
-          throw new Error('Toffoli lines must be unique');
-        for (jx = ix - 1; jx >= 0; --jx)
-        {
-          if (vl === arr[jx])
-            throw new Error('Toffoli lines must be unique');
-        }
-        if (mx < vl)
-          mx = vl;
       }
       return mx;
     }
-    opc = gat.opcode;
-    bas = gat.name;
+    function suffix(ths, sf, op, opc) {
+      let c1, t1, qb, ix;
+      if (null === sf)
+        return op;
+      if (sf.isRepl())
+      {
+        op = tpower(sf.repl, op);
+      }
+      else if (2 <= sf.lines)
+      {
+        c1 = [];
+        for (ix = 0; ix < sf.lines; ++ix)
+        {
+          c1.push(sf.getLine(ix))
+        }
+        qb = unique(c1);
+        t1 = c1.pop();
+        op = ths.Quantum.buildControlled(qb + 1, c1, t1, op, ths.cfg.qrev);
+      }
+      else
+        throw new Error('gate ' + opc + ' is unknown');
+      return op;
+    }
+    function ver_pm(pm) {
+      let rws = pm.rows(), cls = pm.columns(), ix, jx, ct;
+      for (ix = 0; ix < rws; ++ix)
+      {
+        ct = 0;
+        for (jx = 0; jx < cls; ++jx)
+        {
+          if (!pm.sub(ix, jx).isZero())
+            ++ct;
+        }
+        if (1 !== ct)
+          return false;
+      }
+      for (jx = 0; jx < cls; ++jx)
+      {
+        ct = 0;
+        for (ix = 0; ix < rws; ++ix)
+        {
+          if (!pm.sub(ix, jx).isZero())
+            ++ct;
+        }
+        if (1 !== ct)
+          return false;
+      }
+      return true;
+    }
+    function need_real(ph) {
+      let rx, cx;
+      for (rx of ph)
+      {
+        cx = new QDeskInterpret.single.Complex(rx);
+        if (!cx.isReal())
+          return false;
+      }
+      return true;
+    }
     if (undefined !== this.inst_set[opc] && (bas.charAt(0) !== 'O' ||
         this.cfg.ocache))  // cacheing oracles
       return;
@@ -559,7 +671,10 @@ class QDeskInterpret
     case 'Tp':
       if (ph.length !== 1)
         throw new Error('gate ' + bas + ' requires 1 angular parameter');
+      if (!need_real(ph))
+        throw new Error('gate ' + bas + ' requires real angular parameters');
       break;
+    case 'G':
     case 'Ob':
     case 'Od':
     case 'Og':
@@ -569,6 +684,8 @@ class QDeskInterpret
     case 'U':
       if (ph.length < 1 || ph.length > 3)
         throw new Error('gate ' + bas + ' requires 1, 2, or 3 angular parameters');
+      if (!need_real(ph))
+        throw new Error('gate ' + bas + ' requires real angular parameters');
       break;
     default:
       if (ph.length !== 0)
@@ -587,8 +704,7 @@ class QDeskInterpret
     case 'Y':
     case 'Z':
     case '_':
-      op = this.base_set[bas];
-      op = suffix(this, sf, op, opc);
+      op = suffix(this, sf, this.base_set[bas], opc);
       break;
     case 'Cx':
       op = this.Quantum.controlledNotGate;
@@ -597,151 +713,169 @@ class QDeskInterpret
       op = this.Quantum.buildCNOT(2, 1, 0);
       break;
     case 'C':
-      if (2 !== sf.length)
+      if (null === sf || 2 !== sf.lines)
         throw new Error('opcode ' + opc + ' is unknown');
-      c1 = parseInt(sf.charAt(0));
-      t1 = parseInt(sf.charAt(1));
-      op = this.Quantum.buildCNOT(Math.max(c1, t1) + 1, c1, t1);
+      c1 = gat.getLine(0)
+      t1 = gat.getLine(1);
+      op = this.Quantum.buildCNOT(Math.max(c1, t1) + 1, c1, t1, this.cfg.qrev);
       break;
     case 'Im':
-      if (sf.length > 1)
-        throw new Error('opcode ' + opc + ' is unknown');
-      if (1 === sf.length)
-        c1 = parseInt(sf);
-      else
+      if (null === sf)
         c1 = 1;
+      else if (!sf.isRepl())
+        throw new Error('opcode ' + opc + ' is unknown');
+      else
+        c1 = sf.repl;
       op = this.Quantum.buildMeanInversion(c1);
       break;
     case 'Qf':
     case 'Qa':
-      if (sf.length > 1)
-        throw new Error('opcode ' + opc + ' is unknown');
-      if (1 === sf.length)
-        c1 = parseInt(sf);
-      else
+      if (null === sf)
         c1 = 1;
+      else if (!sf.isRepl())
+        throw new Error('opcode ' + opc + ' is unknown');
+      else
+        c1 = sf.repl;
       op = this.Quantum.buildQFT(c1);
       if (bas === 'Qa')
         op = op.adjoint();
       break;
     case 'Sw':
-      if (2 !== sf.length)
+      if (null == sf || 2 !== sf.lines)
         throw new Error('opcode ' + opc + ' is unknown');
-      c1 = parseInt(sf.charAt(0));
-      c2 = parseInt(sf.charAt(1));
-      t1 = Math.max(c1, c2) + 1;
+      c1 = [];
+      for (t1 = 0; t1 < sf.lines; ++t1)
+      {
+        c1.push(gat.getLine(t1));
+      }
+      qb = unique(c1);
+      c2 = c1.pop();
+      c1 = c1[0];
       // op = this.Quantum.buildSwap(Math.abs(c1 - c2) + 1, c1, c2);
-      op = this.Quantum.buildSwap(t1, c1, c2);
+      op = this.Quantum.buildSwap(qb + 1, c1, c2, this.cfg.qrev);
       break;
     case 'Fr':
-      if (0 !== sf.length)
+      if (null !== sf && 3 === sf.lines)
       {
-        if (3 !== sf.length)
-          throw new Error('opcode ' + opc + ' is unknown');
-        c1 = parseInt(sf.charAt(0));
-        c2 = parseInt(sf.charAt(1));
-        t1 = parseInt(sf.charAt(2));
+        c1 = [];
+        for (t1 = 0; t1 < sf.lines; ++t1)
+        {
+          c1.push(gat.getLine(t1));
+        }
+      }
+      else if (null === sf || 3 > sf.lines)
+      {
+        c1 = [0, 1, 2];
+        if (this.cfg.qrev)
+          c1 = c1.reverse()
       }
       else
-      {
-        c1 = 0;
-        c2 = 1;
-        t1 = 2;
-      }
-      op = this.Quantum.buildFred(Math.max(c1, c2, t1) + 1, c1, c2, t1);
+         throw new Error('opcode ' + opc + ' is unknown');
+      qb = unique(c1);
+      t1 = c1.pop();
+      c2 = c1.pop();
+      c1 = c1[0];
+      op = this.Quantum.buildFred(qb + 1, c1, c2, t1, this.cfg.qrev);
       break;
     case 'Tf':
-      if (0 !== sf.length)
+      if (null !== sf && 3 <= sf.lines)
       {
-        // if (3 !== sf.length)
-        //   throw new Error('opcode ' + opc + ' is unknown');
         c1 = [];
-        for (t1 = 0; t1 < sf.length; ++t1)
+        for (t1 = 0; t1 < sf.lines; ++t1)
         {
-          c1.push(parseInt(sf.charAt(t1)));
+          c1.push(gat.getLine(t1));
         }
-        t1 = c1.pop();
       }
       else
       {
-        c1 = [0, 1];
-        t1 = 2;
+        c1 = [0, 1, 2];
+        if (this.cfg.qrev)
+          c1 = c1.reverse()
       }
-      op = this.Quantum.buildToffoli(ver_tf(c1, t1) + 1, c1, t1);
+      qb = unique(c1);
+      t1 = c1.pop();
+      op = this.Quantum.buildToffoli(qb + 1, c1, t1, this.cfg.qrev);
       break;
     case 'M':
       return;
     case 'Kp':
-      op = this.Quantum.buildGlobalPhase(ph[0] * Math.PI);
+      op = this.Quantum.buildGlobalPhase(Number(ph[0]) * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Rp':
-      op = this.Quantum.buildRotation(ph[0] * Math.PI);
+      op = this.Quantum.buildRotation(Number(ph[0]) * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Tp':
-      op = this.Quantum.buildPhaseRotation(ph[0] * Math.PI);
+      op = this.Quantum.buildPhaseRotation(Number(ph[0]) * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Rx':
-      op = this.Quantum.buildRx(ph[0] * Math.PI);
+      op = this.Quantum.buildRx(Number(ph[0]) * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Ry':
-      op = this.Quantum.buildRy(ph[0] * Math.PI);
+      op = this.Quantum.buildRy(Number(ph[0]) * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Rz':
-      op = this.Quantum.buildRz(ph[0] * Math.PI);
+      op = this.Quantum.buildRz(Number(ph[0]) * Math.PI);
       op = suffix(this, sf, op, opc);
       break;
     case 'Ob':
-      if (1 !== sf.length)
+      if (null === sf || 0 === (c1 = sf.qubits))
         throw new Error(opc + ' missing qubit size');
-      c1 = parseInt(sf.charAt(0));
       c2 = (ph.length > 0) ? ph[0] : undefined;
       op = this.buildBernsteinOracle(c1, c2);
       break;
     case 'Od':
-      if (1 !== sf.length)
+      if (null === sf || 0 === (c1 = sf.qubits))
         throw new Error(opc + ' missing qubit size');
-      c1 = parseInt(sf.charAt(0));
       c2 = (ph.length > 0) ? ph[0] : undefined;
       op = this.buildDeutschOracle(c1, c2);
       break;
     case 'Og':
-      if (1 !== sf.length)
+      if (null === sf || 0 === (c1 = sf.qubits))
         throw new Error(opc + ' missing qubit size');
-      c1 = parseInt(sf.charAt(0));
       c2 = (ph.length > 0) ? ph[0] : undefined;
       op = this.buildGroverOracle(c1, c2);
       break;
     case 'Os':
-      if (1 !== sf.length)
+      if (null === sf || 0 === (c1 = sf.qubits))
         throw new Error(opc + ' missing qubit size');
-      c1 = parseInt(sf.charAt(0));
       c2 = (ph.length > 0) ? ph[0] : undefined;
       op = this.buildSimonOracle(c1, c2);
       break;
     case 'P':
       if (1 !== bas.length)
         throw new Error(opc + ' unimplemented');
-      if (1 !== sf.length)
+      if (null === sf || !sf.isRepl())
         throw new Error(opc + ' missing qubit size');
-      op = this.buildPermutationMatrix(opc, parseInt(sf.charAt(0)));
+      op = this.buildPermutationMatrix(opc, sf.repl);
+      if (!ver_pm(op))
+        throw new Error(opc + ' incorrect permutation');
+      break;
+    case 'G':
+      if (1 !== bas.length)
+        throw new Error(opc + ' unimplemented');
+      if (null === sf || !sf.isRepl())
+        throw new Error(opc + ' missing qubit size');
+      op = this.buildGenericMatrix(opc, sf.repl);
+      // if (!ver_gm(op))
+      //   throw new Error(opc + ' not unitary');
       break;
     case 'U':
       if (1 === ph.length)
       {
-        op = this.Quantum.buildU(0, 0, ph[0] * Math.PI);
+        op = this.Quantum.buildU(0, 0, Number(ph[0]) * Math.PI);
       }
       else if (2 === ph.length)
       {
-        op = this.Quantum.buildU(Math.PI / 2, ph[0] * Math.PI, ph[1] * Math.PI);
+        op = this.Quantum.buildU(Math.PI / 2, Number(ph[0]) * Math.PI, Number(ph[1]) * Math.PI);
       }
       else
       {
-        op = this.Quantum.buildU(ph[0] * Math.PI, ph[1] * Math.PI, ph[2] * Math.PI);
+        op = this.Quantum.buildU(Number(ph[0]) * Math.PI, Number(ph[1]) * Math.PI, Number(ph[2]) * Math.PI);
       }
       op = suffix(this, sf, op, opc);
       break;
@@ -758,8 +892,10 @@ class QDeskInterpret
     //   break;
     default:
       if (undefined === this.inst_set[bas])
-        throw new Error(opc + ' unimplemented');
-      return this.inst_set[bas];
+        throw new Error(opc + ' is not an implemented gate');
+      if (undefined === this.inst_set[opc])
+        op = suffix(this, sf, this.inst_set[bas], opc);
+      break;
     }
     this.inst_set[opc] = op;
     return op;
@@ -778,7 +914,9 @@ class QDeskInterpret
       }
       else
       {
-        if (33 > eq.columns())
+        /*if (1 === eq.columns())
+          this.write(this.util.format('%s [%s]\n', lst, eq.transpose().disp()));
+        else */if (33 > eq.columns())
           this.write(this.util.format('%s=\n%s\n', lst, eq.edisp()));
         else
           this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
@@ -787,18 +925,18 @@ class QDeskInterpret
   }
   finalDisplay(eq, init, lst) {
     //if (!this.cfg.trace)
-    {
+    // {
       if (1 === eq.columns())
       {
-        if (33 > eq.columns())
-        {
+        // if (33 > eq.columns())
+        // {
           if (this.cfg.kdisp)
             this.write(this.util.format('[%s] %s %s\n', init, lst, eq.qdisp()));
           else
             this.write(this.util.format('[%s] %s [%s]\n', init, lst, eq.transpose().disp()));
-        }
-        else
-          this.write(this.util.format('large %dx%d quantum state display suppressed\n', eq.rows(), eq.columns()));
+        // }
+        // else
+        //   this.write(this.util.format('large %dx%d quantum state display suppressed\n', eq.rows(), eq.columns()));
       }
       else
       {
@@ -807,7 +945,7 @@ class QDeskInterpret
         else
           this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
       }
-    }
+    // }
     // else
     // {
     //   if (33 > eq.columns())
@@ -816,138 +954,184 @@ class QDeskInterpret
     //     this.write(this.util.format('large %dx%d matrix display suppressed\n', eq.rows(), eq.columns()));
     // }
   }
+  mrrIsCompat(opcode) {
+    let op,
+        mrr = this.inst_set[this.mrr];
+    if (null === mrr)
+      console.log('null mmr');
+    op = this.inst_set[opcode];
+    return (mrr !== undefined && mrr.columns() === 1 &&
+        op instanceof this.Matrix && mrr.rows() === op.columns());
+  }
   run(pgm, qst) {
-    let eq, ix, first, nm, lst, init, ms, mc;
-    if (arguments.length >= 2 && null != qst)
+    let eq, ix, nm, lst, init, ms, mc, gt;
+    lst = '';
+    if (null !== qst)
     {
-      if (qst[0].columns() !== 1)
-        throw new Error('quantum state vector should have only one column');
-      eq = qst[0].clone();
-      first = false;
-      lst = '';
-      if (this.cfg.kdisp)
-        init = eq.qdisp();
-      else
-        init = eq.transpose().disp();
+      // if there is an initial value, the vectors are combined by tensor product into an initial quantum state
+      eq = new this.Qubit(qst[0]);
+      if (qst[0].gate != null)
+      {
+        eq = this.exec([[null, [eq], qst[0].gate]]);
+      }
       if (this.cfg.trace)
         this.write(this.util.format('[%s]\n', eq.qdisp()));
       for (ix = 1; ix < qst.length; ++ix)
       {
-        eq = eq.tensorprod(qst[ix]);
+        mc = new this.Qubit(qst[ix]);
+        if (qst[ix].gate != null)
+        {
+          mc = this.exec([[null, [mc], qst[ix].gate]]);
+        }
+        eq = eq.tensorprod(mc);
         if (this.cfg.trace)
           this.write(this.util.format('[%s]\n', eq.qdisp()));
       }
+      init = (this.cfg.kdisp) ? eq.qdisp() : eq.transpose().disp();
+      ix = 0;
     }
     else
     {
-      first = true;
-      init = '';
-    }
-    for (mc = ix = 0; ix < pgm.length; ++ix)
-    {
-      nm = pgm[ix];
-      if (undefined === this.inst_set[nm])
+      // there is no initial value
+      if (!this.cfg.nomrr && pgm.length > 0 && this.mrrIsCompat(pgm[0].opcode))
       {
-        this.analyze_opcode(nm)
+        // there is a compatible previous quantum state
+        eq = this.inst_set[this.mrr];
+        init = (this.cfg.kdisp) ? eq.qdisp() : eq.transpose().disp();
+        ix = 0;
       }
-      else if (typeof this.inst_set[nm] === 'function')
+      else
       {
-        ms = this.inst_set[nm](eq);
-        if (nm === '/')
+        // no compatible previous q-state, start with the first gate
+        this.inst_set[this.mrr] = undefined;
+        nm = pgm[0].opcode;
+        eq = this.inst_set[nm];
+        lst = nm;
+        init = '';
+        ix = 1;
+      }
+    }
+    // execute the program by selecting each opcode, and getting the corresponding entry in the instruction cache;
+    // if the instruction is a function call, it is either a measurement or a factoring operation;
+    // call it with the current quantum state; factoring returns a new quantum state; measurement returns an
+    // array of strings which are displayed with an id, and the quantum state is unchanged
+    mc = 0;  // measurement counter
+    for (/* ix already set as 0 or 1 */; ix < pgm.length; ++ix)
+    {
+      nm = pgm[ix].opcode;
+      gt = this.inst_set[nm];
+      if (undefined === gt)
+        throw new Error(`logic: instruction ${nm} not in instruction set`);
+      if (typeof gt === 'function')
+      {
+        if (nm.charAt(0) === '/')
         {
-          eq = ms
+          eq = gt(eq);
         }
         else
         {
+          ms = gt(eq.vector);
           this.write(this.util.format('  M%d={%s}\n', ++mc, ms[0].join(', ')));
         }
         continue;
       }
-      if (first)
-      {
-        eq = this.inst_set[nm].clone();
-        lst = nm;
-        first = false;
-      }
+      // execute instruction
+      if (eq instanceof this.Qubit)
+        eq = new this.Qubit(gt.prod(eq.vector));
       else
-      {
-        eq = this.inst_set[nm].prod(eq);
-        // lst = nm + '(' + lst + ')';
-        lst += ' ' + nm;
-      }
+        eq = gt.prod(eq);
+      lst += ' ' + nm;  // accumulate opcode
       this.stepDisplay(eq, lst);
     }
-    this.finalDisplay(eq, init, lst);
+    if (null !== eq)
+      this.finalDisplay(eq, init, lst);
     return eq;
   }
-  exec (stmt) {
+  /*
+   * c_stmt - null, or an array of statements [[stmt],[stmt], . . ., [stmt]]
+   * stmt - an array representing a single statement [target, initial, gates]
+   * target - a NamedGate object or a Register object, or null
+   * initial - an array of Qubit objects to produce a tensor product initial value, or null
+   * gates - an array of Gate objects or null
+   */
+  exec (c_stmt) {
     // assemble a chain of circuit steps into an executable program
     let sq,
-        qst = null,
-        ng = null,
+        stmt,
+        qst,
+        rg,
         eq,
+        pgm;
+    if (null === c_stmt)  // an empty input line
+    {
+      // display most recent result if exists and optioned
+      if (!this.cfg.nomrr && undefined !== (eq = this.inst_set[this.mrr]))
+        this.finalDisplay(eq, '', '');
+      return null;
+    }
+    eq = null;
+    for (stmt of c_stmt)  // multiple statements on a single line, each separately executed
+    {
+      rg = null;
+      // an initial value quantum state, array of one or more qubits, converted to an initial quantum state
+      // by tensor products
+      qst = stmt[1]
+      pgm = stmt[2];  // the gate sequence
+      if (null !== pgm)
+      {
+        // the final element could be a Gate or a GateFactor
+        sq = pgm[pgm.length - 1];
+        if (sq instanceof GateFactor)
+        {
+          sq.build();
+        }
+      }
+      else
         pgm = [];
-    this.test_out = [];
-    if (stmt instanceof Qubit)
-    {
-      qst = [stmt.vector];
-      sq = stmt.next;
-      while (null !== sq && sq instanceof Qubit)
+      if (stmt[0] instanceof NamedGate)
       {
-        qst.push(sq.vector);
-        sq = sq.next;
-      }
-    }
-    else
-    {
-      sq = stmt;
-    }
-    if (null !== sq)
-    {
-      if (sq instanceof NamedGate)
-      {
-        ng = sq;
-        sq = sq.next;
-      }
-      while (null !== sq.next)
-      {
-        if (!(sq instanceof Gate))
-          throw new Error('logic: not Gate object in Gate sequence');
-        pgm.push(sq.opcode);
-        sq = sq.next;
-      }
-      if (sq instanceof GateFactor)
-      {
-        pgm.push(sq.build());
+        // for a named gate, the gate equivalent is computed and assigned as a custom gate, becoming an instruction
+        // in the instruction set; any initial quantum state is ignored, and the MRR is cleared.
+        this.inst_set[this.mrr] = undefined;
+        eq = this.run(pgm, null);
+        if (!(eq instanceof this.Matrix))
+          throw new Error('Named Gate can only be assigned a Matrix');
+        this.inst_set[stmt[0].name] = eq;
       }
       else
       {
-        if (!(sq instanceof Gate))
-          throw new Error('logic: not Gate object in Gate sequence');
-        pgm.push(sq.opcode);
+        // without a named gate, the program (gate sequence) is run with an optional initial quantum state
+        // if there is a register and no initial quantum state, the register becomes the IQS
+        if (stmt[0] instanceof Register)
+        {
+          // for a register, intialize the quantum state from the register
+          // if it exists or from most recent reference
+          rg = stmt[0];
+          if (qst === null)
+          {
+            qst = [rg.valueOf()];
+            rg = null;
+          }
+        }
+        eq = this.run(pgm, qst);
+        if (eq instanceof Qubit)
+        {
+          if (null != eq.gate)
+            throw new Error('logic: Qubit gate is set at end of statement computation');
+          if (null != rg)
+            this.inst_set[rg.name] = eq;
+          this.inst_set[this.mrr] = eq;
+        }
       }
     }
-    if (ng !== null)
-    {
-      eq = this.run(pgm, null, {trace: false, kdisp: false});
-      // this.base_set[ng.name] = eq;
-      this.inst_set[ng.name] = eq;
-    }
-    else
-    {
-      this.run(pgm, qst);
-    }
-    return this.test_out;
+    return eq;
   }
 }
-// QDeskInterpret.Quantum = require('./quantum.js').Quantum;
 class Operand
 {
   constructor(op)
   {
     this._opcode = op;
-    this._next = null;
-    // this._oprs = null;  // filled in by instructions that have an operand list
   }
   get opcode()
   {
@@ -958,113 +1142,225 @@ class Operand
     this._opcode = opc;
     return this._opcode;
   }
-  get next()
-  {
-    return this._next;
-  }
-  set next(val)
-  {
-    if (undefined === val)
-      val = null;
-    this._next = val;
-  }
   toString() {
     return '';
   }
 }
 Operand.QUBIT = 1;
 Operand.GATE = 2;
-Operand.KET = 3;
-Operand.GFACTOR = 4;
-Operand.NMGATE = 5;
+Operand.GATES = 3;
+Operand.KET = 4;
+Operand.GFACTOR = 5;
+Operand.NMGATE = 6;
+Operand.LINEREF = 7;
+Operand.REGISTER = 8;
 Operand.UNGATE = '_';
 Operand.MGATE = 'M';
 class Qubit extends Operand
 {
   constructor(ka) {
-    let _bts, _k, _mn, _mx;
+    let _k, _mx;
     super(Operand.QUBIT);
+    if (ka instanceof Qubit)
+    {
+      this._ident = ka._ident;
+      this._next = null;
+      this._gate = null;
+      this._vector = ka._vector;
+      return;
+    }
+    if (ka instanceof QDeskInterpret.single.Matrix)
+    {
+      this._ident = '';
+      this._next = null;
+      this._gate = null;
+      this._vector = ka;
+      return;
+    }
     if (!(ka instanceof Array))
-      throw new LogicErr('Qubit parameter must be a ket array');
+      throw new LogicErr('Qubit constructor requires a Ket array');
+    this._ident = '';
+    this._next = null;
+    this._gate = null;
+    _mx = ka[0].qubits;
     for (_k of ka)
     {
       if (!(_k instanceof Ket))
-        throw new LogicErr('Qubit ket array parameter contains non-Ket\'s');
-    }
-    this._ident = '';
-    this._next = null;
-    _mn = _mx = ka[0].qubits;
-    for (_k of ka)
-    {
-      _bts = _k.qubits;
-      if (_bts > _mx)
-        _mx = _bts;
-      if (_bts < _mn)
-        _mn = _bts;
-    }
-    if (_mn !== _mx)
-    {
-      for (_k of ka)
-      {
-        _k.qubits = _mx;
-      }
+        throw new LogicErr('Qubit Ket array contains non-Ket\'s');
+      if (_k.qubits > _mx)
+        _mx = _k.qubits;
     }
     if (_mx > QDeskInterpret.single.Quantum.qubits)
       throw Error('current support is limited to ' + QDeskInterpret.single.Quantum.qubits + ' qubits');
     this._vector = new QDeskInterpret.single.Matrix(Math.pow(2, _mx), 1);
     for (_k of ka)
     {
-      // this._vector.mat[_k.basis][0] = new QDeskInterpret.single.Complex(_k.coeff);
-      // this._vector.sub(_k.basis, 0, new QDeskInterpret.single.Complex(_k.coeff));
+      if (_k.qubits !== _mx)
+        _k.qubits = _mx;
+      // add the coefficient of each ket to the corresponding basis in the qubit under construction
+      // avoids issues with duplicate bases in the ket array
       this._vector.sub(_k.basis, 0, _k.coeff.sum(this._vector.sub(_k.basis, 0)));
     }
-    _bts = new QDeskInterpret.single.Complex(0);
-    for (_mn = 0; _mn < this.vector.rows(); ++_mn)
-    {
-      if (undefined === this._vector.sub(_mn, 0))
-        this._vector.sub(_mn, 0, _bts);
-    }
+  }
+  disp() { // pass through a call to the vector
+    return this._vector.disp();
+  }
+  edisp() { // pass through a call to the vector
+    return this._vector.edisp();
+  }
+  qdisp() { // pass through a call to the vector
+    return this._vector.qdisp();
+  }
+  prod(qs) { // pass through a call to the vector product
+    return new Qubit(this._vector.prod(qs._vector));
+  }
+  scprod(qs) { // pass through a call to the scalar-vector product
+    return new Qubit(this._vector.scprod(qs));
+  }
+  tensorprod(qs) { // pass through a call to the vector tensor product
+    return new Qubit(this._vector.tensorprod(qs._vector));
+  }
+  transpose() { // pass through a call to the vector transpose
+    return new Qubit(this._vector.transpose());
+  }
+  rows() { // pass through a call to the vector rows()
+    return this._vector.rows();
+  }
+  columns() { // pass through a call to the vector rows()
+    return this._vector.columns();
   }
   get ident() {
     return this._ident;
   }
-  get next() {
-    return this._next;
-  }
-  get bits() {
-    return this._bits;
-  }
-  set next(val) {
-    if (undefined === val)
-      val = null;
-    this._next = val;
+  get vector() {
+    return this._vector;
   }
   get name() {
     return this._ident;
   }
-  get vector() {
-    return this._vector
+  get gate() {
+    return this._gate
+  }
+  set gate(val) {
+    this._gate = val;
   }
   toString() {
-    // let _o, _k;
-    // _o = [];
-    // for (_k of this._ket)
-    // {
-    //   _o.push(_k.toString());
-    // }
-    // return _o.join('');
     return this.vector.qdisp();
   }
 }
-class Gate extends Operand
-{
+class LineRef extends Operand {
+  /**
+   * Construct a Line Reference, a gate suffix of one or more lines, referring to lines in the current register or
+   * to other registers.
+   * @param ln1 an array of an integer in character form, and a (possibly null) register reference, a string;
+   * the special case of a null second element and a null ln2 is for backward compatibility to earlier
+   * releases representing single digit line references with no registers; a single digit only is a gate replication
+   * factor
+   * @param ln2 an array (possibly null) of arrays of the same form as ln1, representing lines 2 through n in a sequence
+   * of line (and register) references
+   */
+  constructor(ln1, ln2) {
+    let _k;
+    super(Operand.LINEREF);
+    this._lines = [];
+    this._repl = -1;
+    if (0 === arguments.length)
+      return this;
+    if (!(ln1 instanceof Array))
+      throw new LogicErr('LineRef parameter 1 must be an array');
+    if (null === ln1[1] && (null === ln2 || 0 === ln2[0].length))
+    {
+      if (1 === ln1[0].length || (null !== ln2 && 0 === ln2[0].length))
+      {
+        this._repl = parseInt(ln1[0]);
+      }
+      else
+      {
+        for (_k = 0; _k < ln1[0].length; ++_k)
+        {
+          this._lines.push([parseInt(ln1[0][_k]), null]);
+        }
+      }
+    }
+    else
+    {
+      this._lines.push([parseInt(ln1[0]), (null === ln1[1]) ? null : ln1[1]]);
+      for (_k = 0; _k < ln2.length; ++_k)
+      {
+        if (0 === ln2[_k].length)
+          break;
+        this._lines.push([parseInt(ln2[_k][0]), (null === ln2[_k][1]) ? null : ln2[_k][1]]);
+      }
+    }
+  }
+  isRepl() {
+    return 0 < this._repl;
+  }
+  get repl() {
+    return this._repl;
+  }
+  get qubits() {
+    return (0 !== this._lines.length) ? this._lines.reduce((pv, cv) => pv + cv[0], 0) : this._repl;
+  }
+  get lines() {
+    return this._lines.length;
+  }
+  hasLine(ix) {
+    return !(ix < 0 || ix >= this._lines);
+  }
+  hasReg(ix) {
+    return !(ix < 0 || ix >= this._lines || this._lines[ix][1] === null);
+  }
+  getLine(ix) {
+    return this._lines[ix][0];
+  }
+  getReg(ix) {
+    return this._lines[ix][1];
+  }
+  toString() {
+    let lrg, ix, lins;
+    if (this.isRepl())
+    {
+      if (this._repl < 10)
+        return `${this._repl}`;
+      return `${this._repl},`;
+    }
+    lrg = false;
+    for (ix = 0; ix < this._lines.length; ++ix)
+    {
+      if (this.getLine(ix) > 9 || this.hasReg(ix))
+      {
+        lrg = true;
+        break;
+      }
+    }
+    lins = [];
+    if (lrg)
+    {
+      for (ix = 0; ix < this._lines.length; ++ix)
+      {
+        if (this.hasReg(ix))
+          lins.push(`${this.getLine(ix)}${this.getReg(ix)}`)
+        else
+          lins.push(`${this.getLine(ix)}`)
+      }
+      return lins.join(',');
+    }
+    for (ix = 0; ix < this._lines.length; ++ix)
+    {
+      lins.push(`${this.getLine(ix)}`)
+    }
+    return lins.join('');
+  }
+}
+class Gate extends Operand {
   constructor(nm, sf) {
-    let t1;
     super(Operand.GATE);
     this._name = nm;
-    this._suffix = '';
+    this._suffix = null;
     this._angles = [];
     this._measure = false;
+    this._gates = 1;
     if (null != sf)
     {
       if (typeof sf !== 'object')
@@ -1077,22 +1373,19 @@ class Gate extends Operand
     if (nm === Operand.MGATE)
     {
       this._measure = true;
-      if (null != sf)
+      if (null != this._suffix)
       {
-        t1 = parseInt(sf);
-        if (t1 < 1 || t1 > 9)
-          throw new Error('gate ' + nm + sf + ' is unknown');
+        if (!this._suffix.isRepl() || this._suffix.repl < 1 || this._suffix.repl > 9)
+          throw new Error(`gate ${nm}${this._suffix.toString()} is unknown`);
       }
     }
-    this.opcode = this.opCode();
+    this.opcode = this.opCodeStr();
     try
     {
       QDeskInterpret.single.analyze_opcode(this);
     }
     catch (e)
     {
-      // this.write(e.message);
-      // return;
       throw e;
     }
   }
@@ -1124,9 +1417,10 @@ class Gate extends Operand
   }
   combine(gat) {
     let rgt, op, opc;
-    if (null == gat)
+    if (null === gat)
       return;
     opc = this.opcode + gat.opcode;
+    this._gates += 1;
     if (this._measure || gat._measure)
     {
       this.measure(gat);
@@ -1160,58 +1454,76 @@ class Gate extends Operand
   set name(nm) {
     this._name = nm;
   }
+  get qubits() {
+    return (null !== this._suffix) ? this._suffix.qubits : this._gates;
+  }
   getSuffix() {
     return this._suffix;
   }
-  // getQubits() {
-  // }
-  // addSuffix(sf) {
-  //   this._suffix += sf;
-  // }
   getAngles() {
     return this._angles;
   }
   addAngles(an) {
     this._angles.concat(an);
   }
-  opCode() {
-    let str, ix;
+  getLine(ix) {
+    return this._suffix.getLine(ix);
+  }
+  opCodeStr() {
+    let str, ss, lst;
     str = this._name;
     if (0 !== this._angles.length)
     {
-      str += '(';
-      for (ix = 0; ix < this._angles.length; ++ix)
+      lst = [];
+      for (let an of this._angles)
       {
-        if (0 !== ix)
-          str += ',';
-        str += this._angles[ix];
+        ss = String(an);
+        lst.push(ss);
       }
-      str += ')';
+      str = str + '(' + lst.join(',') + ')';
     }
-    if (0 !== this._suffix.length)
+    if (null !== this._suffix)
     {
       if (str === Operand.MGATE)
       {
-        ix = parseInt(this._suffix);
-        return Operand.MGATE.repeat(ix);
+        return Operand.MGATE.repeat(this._suffix.repl);
       }
-      str += this._suffix;
+      str += this._suffix.toString();
     }
     return str;
   }
   toString() {
-    return ':' + this.opCode();
+    return ':' + this.opcode;
   }
 }
 class NamedGate extends Operand
 {
-  constructor(nm, gs) {
+  constructor(nm) {
     super(Operand.NMGATE);
     this._name = nm;
-    this.next = gs;
   }
   get name() {
     return this._name;
+  }
+  toString() {
+    return this._name;
+  }
+}
+class Register extends Operand
+{
+  constructor(nm) {
+    super(Operand.REGISTER);
+    this._name = '~' + nm;
+  }
+  get name() {
+    return this._name;
+  }
+  valueOf() {
+    let vl;
+    vl = QDeskInterpret.single.inst_set[this._name];
+    if (vl === undefined)
+      throw new Error('register ' + this._name + ' is not defined');
+    return vl;
   }
   toString() {
     return this._name;
@@ -1268,8 +1580,9 @@ class Ket extends Operand
 }
 class GateFactor extends Operand {
   constructor(b) {
-    super(Operand.GFACTOR);
+    super('/');
     this._factor = new QDeskInterpret.single.Complex(b);
+    this._opcode += this._factor.disp();
   }
   get factor() {
     return this._factor;
@@ -1281,12 +1594,11 @@ class GateFactor extends Operand {
       this._factor.negateq();
   }
   build() {
-    let r, nm, op;
+    let r, op;
     r = new QDeskInterpret.single.Complex(1).quo(this._factor);
-    nm = '/';
     op = QDeskInterpret.single.Matrix.scprod.bind(null, r);
-    QDeskInterpret.single.inst_set[nm] = op;
-    return nm;
+    QDeskInterpret.single.inst_set[this._opcode] = op;
+    return this._opcode;
   }
 }
 module.exports.QDeskInterpret = QDeskInterpret;

@@ -2,7 +2,7 @@
  * Created by danevans on 5/4/20.
  */
 function SysinReader(callback, intro) {
-  let ctl = {src:'', pos:0, lineno:0, history:[], curhist:0, wid:2}
+  let ctl = {src:'', pos:0, lineno:0, slin:0, history:[], curhist:0, wid:2}
   const IGN = 0, PRV = 1, LFT = 2, RGT = 3, NXT = 4;
   if (process.stdin.isTTY)
   {
@@ -31,6 +31,14 @@ function SysinReader(callback, intro) {
     else
       pfx = '[' + lin + '] ';
     process.stdout.write(pfx);
+    ctl.slin = 0;
+  }
+  function subprompt() {
+    let pfx, pad;
+    ctl.slin += 1;
+    pad = ctl.wid - 1;
+    pfx = '[' + (' '.repeat(pad)) + '.' + ctl.slin + '] ';
+    process.stdout.write(pfx);
   }
   function escapeCheck(_src) {
     let ix, ch;
@@ -44,6 +52,7 @@ function SysinReader(callback, intro) {
         switch (ch)
         {
         case '[':
+        case 'O':
           ch = _src.charAt(ix + 2);
           //process.stdout.write('escape [' + ch);
             switch (ch)
@@ -60,7 +69,7 @@ function SysinReader(callback, intro) {
           ix += 2;
           break;
         default:
-          process.stdout.write('escape unknown:' + _src.substring(ix + 1));
+          process.stdout.write('escape unknown:0x' + Number(_src.charCodeAt(ix + 1)).toString(16));
           ix += 1;
           break;
         }
@@ -72,7 +81,7 @@ function SysinReader(callback, intro) {
   prompt();
   // process.stdin.on('readable', callback);
   process.stdin.on('readable', () => {
-    let chunk, ch, esc;
+    let chunk, ch, esc, pf;
     // Use a loop to make sure we read all available data.
     while ((chunk = process.stdin.read()) !== null)
     {
@@ -169,12 +178,15 @@ function SysinReader(callback, intro) {
       else if ('\u000d' === ch)  //  return ('\r')
       {
         process.stdout.write('\n');
-        callback(ctl.src + chunk);
+        pf = callback(ctl.src + chunk);
         ctl.history.push(ctl.src);
         ctl.curhist = ctl.history.length;
         ctl.src = '';
         ctl.pos = 0;
-        prompt();
+        if (pf)
+          prompt();
+        else
+          subprompt();
       }
       else
       {
@@ -182,8 +194,11 @@ function SysinReader(callback, intro) {
         {
           esc = chunk + ctl.src.substring(ctl.pos);
           process.stdout.write(esc);
-          process.stdout.moveCursor(-(esc.length - 1), 0, () => ctl.pos += 1);
-          ctl.src = ctl.src.substring(0, ctl.pos) + esc;
+          process.stdout.moveCursor(-(esc.length - 1), 0,
+            () => {
+              ctl.src = ctl.src.substring(0, ctl.pos) + esc;
+              ctl.pos += 1
+            });
         }
         else
         {
@@ -197,7 +212,6 @@ function SysinReader(callback, intro) {
     }
   });
   process.stdin.on('end', () => {
-    //process.stdin.setRawMode(false);
     process.stdout.write('Good-bye\n');
     process.stdin.setRawMode(false);
   });
